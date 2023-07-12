@@ -1,16 +1,13 @@
-### Hi there 👋
+# webpanda.js 👋
 
-<!--
-**webpandajs/webpandajs** is a ✨ _special_ ✨ repository because its `README.md` (this file) appears on your GitHub profile.
+webpanda.js 是面向前后端分离、视图与数据分离, 基于 ECMAScript 5 特性的单页应用 (SPA) 框架。
 
-Here are some ideas to get you started:
 
-- 🔭 I’m currently working on ...
-- 🌱 I’m currently learning ...
-- 👯 I’m looking to collaborate on ...
-- 🤔 I’m looking for help with ...
-- 💬 Ask me about ...
-- 📫 How to reach me: ...
-- 😄 Pronouns: ...
-- ⚡ Fun fact: ...
--->
+# vscode 编辑器本地开发，安装 Live Server 扩展
+
+在扩展设置中，设置liveServer.settings.file：
+```shell
+/index.html
+```
+When set, serve this file (server root relative) for every 404 (useful for single-page applications)
+设置后，为每个404(对于单页面应用程序很有用)提供此文件(相对于服务器根)

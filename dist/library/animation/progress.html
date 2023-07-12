@@ -1,0 +1,95 @@
+<webpanda -if="show">
+    <style -text>
+        html .webpanda-admin-progress,
+        body .webpanda-admin-progress,
+        html .webpanda-admin-progress * ,
+        body .webpanda-admin-progress * {
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+
+        .webpanda-admin-progress.header {
+            pointer-events: none;
+            height: 4px;
+            z-index: 99999999999;
+            position: fixed;
+            top:0;
+            transition: all 200ms ease 0s;
+            width: 100%;
+        }
+        .webpanda-admin-progress.header>.peg {
+            -webkit-box-shadow: 0 0 10px #E80D5E,0 0 5px #E80D5E !important;
+            box-shadow: 0 0 10px #E80D5E,0 0 5px #E80D5E !important;
+        }
+        .webpanda-admin-progress.body {
+            z-index: 99999999999;
+            position: fixed;
+            width: 100%;
+            text-align: center;
+            font-size: 14px;
+            font-weight: bold;
+
+            /* 设置文字不能被选中 */
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+        }
+
+
+
+        /* From cssbuttons.io by @barisdogansutcu */
+        .webpanda-admin-progress svg {
+            width: 3.25em;
+            transform-origin: center;
+            animation: webpanda-admin-progress-rotate4 2s linear infinite;
+        }
+
+        .webpanda-admin-progress circle {
+            fill: none;
+            /* stroke: hsl(214, 97%, 59%); */
+            stroke-width: 2;
+            stroke-dasharray: 1, 200;
+            stroke-dashoffset: 0;
+            stroke-linecap: round;
+            animation: webpanda-admin-progress-dash4 1.5s ease-in-out infinite;
+        }
+
+        @keyframes webpanda-admin-progress-rotate4 {
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        @keyframes webpanda-admin-progress-dash4 {
+            0% {
+                stroke-dasharray: 1, 200;
+                stroke-dashoffset: 0;
+            }
+
+            50% {
+                stroke-dasharray: 90, 200;
+                stroke-dashoffset: -35px;
+            }
+
+            100% {
+                stroke-dashoffset: -125px;
+            }
+        }
+
+
+    </style>
+
+    <div class="webpanda-admin-progress header" -style="{transform: 'translate3d(-' + (100-percent) + '%, 0px, 0px)',background: background}">
+        <div class="peg"></div>
+    </div>
+    <div -if="firstShow" class="webpanda-admin-progress body" -style="{top:(#window.document.documentElement.clientHeight/3) + 'px', color: percentColor}">
+        <svg viewBox="25 25 50 50">
+            <circle r="20" cy="50" cx="50" -style-stroke="percentColor"></circle>
+        </svg>
+        <div>
+            页面加载中......{{percent}}%
+        </div>
+    </div>
+
+</webpanda>
