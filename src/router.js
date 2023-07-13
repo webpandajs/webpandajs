@@ -3,7 +3,7 @@
  * 将数据工程挂载到框架上
  */
 webpanda.mount.Router = webpanda.data ({
-
+    name: 'router',
     /**
      * 动态路径页面设置  
      * 在使用 onpage 的时候，一定要将 onpage 设为全局有效  
@@ -12,8 +12,15 @@ webpanda.mount.Router = webpanda.data ({
      */
     onpage: function (e) {
 
+        /**
+         * 这里面根据路由规则自行判断并执行页面操作
+         */
 
-
+        // 始终执行home页面
+        e.page ({
+            name: 'page://home',
+            src: webpanda.env.src ('page/home.js'),
+        });
     },
     
     // onpageurlchange: function (e) {

@@ -6,11 +6,9 @@ module.exports = {
             src: [".less", ".psd"],
         },
         // 忽略列表
-        path: [
-            "library/es6-promise-v4.2.8/es6-promise-v4.2.8.js",
-            "library/es6-promise-v4.2.8/es6-promise.auto-v4.2.8.js",
-            "library/es6-promise-v4.2.8/es6-promise.min-v4.2.8.js",
-        ],
+        // path: [
+        //     "library/jquery-3.6.4/jquery.js",
+        // ],
     },
     // 压缩配置: 只对src目录有效
     minify: {
