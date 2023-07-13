@@ -2,16 +2,16 @@ webpanda.data ({
     name: 'page://home',
     selector: 'body',
     template: {
-        src: webpanda.env.src ('page/home.html'),
+        src: webpanda.src ('page/home.html'),
     },
     mount: [
-        webpanda.env.require ('component://docs', {
+        webpanda.require ('component://docs', {
             use: 'Docs'
         }),
-        webpanda.env.require ('component://readme', {
+        webpanda.require ('component://readme', {
             use: 'Readme'
         }),
-        webpanda.env.require ('component://page/footer', {
+        webpanda.require ('component://page/footer', {
             use: 'Footer',
             tag: true
         }),
@@ -22,17 +22,17 @@ webpanda.data ({
          * 模板样式:
          * https://www.bootmb.com/themes/boomerang/
          */
-        webpanda.env.src ('assets/css/theme.css'),
-        webpanda.env.src ('assets/css/demo.css'),
+        webpanda.src ('assets/css/theme.css'),
+        webpanda.src ('assets/css/demo.css'),
         
         /**
          * prism 代码高亮
          * https://prismjs.com/
          */
-        webpanda.env.library ('prism/prism.css'),
-        webpanda.env.library ('prism/prism.js'),
+        webpanda.library ('prism/prism.css'),
+        webpanda.library ('prism/prism.js'),
 
-        webpanda.env.src ('assets/css/index.css'),
+        webpanda.src ('assets/css/index.css'),
     ],
     onexecute: function (e) {
         console.log (this.$.name, 'onexecute');

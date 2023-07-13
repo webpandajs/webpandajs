@@ -3,7 +3,7 @@ webpanda.data ({
     selector: 'body',
     // 模板
     template: {
-        src: webpanda.env.src ('component/animation/loading.html')
+        src: webpanda.src ('component/animation/loading.html')
     },
     construct: {
         show: false,

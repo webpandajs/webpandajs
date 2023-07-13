@@ -1,130 +1,128 @@
 console.log("%cwebpanda.js v" + webpanda.version, "text-shadow: 0 1px 0 #ccc,0 2px 0 #c9c9c9,0 3px 0 #bbb,0 4px 0 #b9b9b9,0 5px 0 #aaa,0 6px 1px rgba(0,0,0,.1),0 0 5px rgba(0,0,0,.1),0 1px 3px rgba(0,0,0,.3),0 3px 5px rgba(0,0,0,.2),0 5px 10px rgba(0,0,0,.25),0 10px 10px rgba(0,0,0,.2),0 20px 20px rgba(0,0,0,.15);font-size:3.5em");
 
 // 环境变量
-webpanda.env = {
+webpanda.env = { };
 
 
+/**
+ * 获取加载数据工程的规范配置
+ * @param {String} name 工程数据名称
+ * @param {String} options 选项
+ * @return {Object} 
+ */
+webpanda.mount.require = function (name, options) {
+    if (!options || typeof options !== 'object') {
+        options = new Object ();
+    }
+    options.src = webpanda.src (name.replace (/\:\/\//, '/') + '.js');
+    options.name = name;
+    return options;
+};
+
+
+/**
+ * 规范的加载数据工程
+ * @param {String} name 工程数据名称
+ * @param {String} options 选项
+ */
+webpanda.mount.ready = function (name, options) {
+    
     /**
-     * 获取加载数据工程的规范配置
-     * @param {String} name 工程数据名称
-     * @param {String} options 选项
-     * @return {Object} 
+     * 获取加载数据工程数据的规范配置
+     * 如果工程存在, 直接去准备执行
+     * 如果工程不存在则包含数据工程，当工程准备完毕后执行
      */
-    require: function (name, options) {
-        if (!options || typeof options !== 'object') {
-            options = new Object ();
-        }
-        options.src = webpanda.env.src (name.replace (/\:\/\//, '/') + '.js');
-        options.name = name;
-        return options;
-    },
+    var requires = webpanda.require (name);
+    var data = webpanda.data.get (requires.name);
+    if (data) {
+        data.$.ready (options);
+    } else {
+        webpanda.include (requires.src);
+        webpanda.data.ready (requires.name, options);
+    }
+};
 
 
-    /**
-     * 规范的加载数据工程
-     * @param {String} name 工程数据名称
-     * @param {String} options 选项
-     */
-    data: function (name, options) {
-
-        /**
-         * 获取加载数据工程数据的规范配置
-         * 如果工程存在, 直接去准备执行
-         * 如果工程不存在则包含数据工程，当工程准备完毕后执行
-         */
-        var requires = webpanda.env.require (name);
-        var data = webpanda.data.get (requires.name);
-        if (data) {
-            data.$.ready (options);
-        } else {
-            webpanda.include (requires.src);
-            webpanda.data.ready (requires.name, options);
-        }
-    },
+/**
+ * 源地址
+ * @param {String} src 
+ * @return {String} 
+ */
+webpanda.mount.src = function (src) {
+    var builder = webpanda.mount.__builder || null;
+    return (builder && builder.src ? builder.src + src : '/src/' + src);
+};
 
 
-    /**
-     * 源地址
-     * @param {String} src 
-     * @return {String} 
-     */
-    src: function (src) {
-        var builder = webpanda.mount.__builder || null;
-        return (builder && builder.src ? builder.src + src : '/src/' + src);
-    },
+/**
+ * 库地址
+ * @param {String} library 
+ * @return {String} 
+ */
+webpanda.mount.library = function (library) {
+    return '/library/' + library;
+};
 
 
-    /**
-     * 库地址
-     * @param {String} library 
-     * @return {String} 
-     */
-    library: function (library) {
-        return '/library/' + library;
-    },
+/**
+ * 跳转地址
+ * @param {String|HTMLElement} url 链接
+ * @param {Boolean} isReplace 是否不保留会话信息，为真表示不会在history中留下记录 
+ */
+webpanda.mount.targetUrl = function (url, isReplace) {
+    if (url instanceof HTMLElement) {
+        url = url.getAttribute ('href');
+    }
 
-
-    /**
-     * 跳转地址
-     * @param {String|HTMLElement} url 链接
-     * @param {Boolean} isReplace 是否不保留会话信息，为真表示不会在history中留下记录 
-     */
-    targetUrl: function (url, isReplace) {
-        if (url instanceof HTMLElement) {
-            url = url.getAttribute ('href');
-        }
-
-        if (typeof url !== 'string' || url === '') {
-            return;
-        }
+    if (typeof url !== 'string' || url === '') {
+        return;
+    }
+    
+    do {
         
-        do {
-            
-            /**
-             * baiduboxapp 是百度app，真是百毒啊，
-             * 对window.history.pushState兼容上似乎存在问题，忘记版本了
-             */
-            var userAgent = window.navigator.userAgent.toLowerCase ();
-            if (userAgent.indexOf ('baiduboxapp') !== -1) {
-                break;
-            }
+        /**
+         * baiduboxapp 是百度app，真是百毒啊，
+         * 对window.history.pushState兼容上似乎存在问题，忘记版本了
+         */
+        var userAgent = window.navigator.userAgent.toLowerCase ();
+        if (userAgent.indexOf ('baiduboxapp') !== -1) {
+            break;
+        }
 
-            // 兼容性判断
-            if (!window.history || typeof window.history.pushState !== 'function') {
-                break;
-            }
-
-            if (isReplace) {
-                window.history.replaceState (null, '', url);
-            } else {
-                window.history.pushState (null, '', url);
-            }
-
-            return;
-        } while (false);
+        // 兼容性判断
+        if (!window.history || typeof window.history.pushState !== 'function') {
+            break;
+        }
 
         if (isReplace) {
-            window.location.replace (url);
+            window.history.replaceState (null, '', url);
         } else {
-            window.location.assign (url);
+            window.history.pushState (null, '', url);
         }
 
-    },
+        return;
+    } while (false);
+
+    if (isReplace) {
+        window.location.replace (url);
+    } else {
+        window.location.assign (url);
+    }
+
+};
 
 
-    /**
-     * DOM 加载完毕执行方法
-     * @param {Function} callback 回调函数
-     */
-    ready: function (callback) {
-        var readyState = document.readyState;
-        if (readyState === 'interactive' || readyState === 'complete') {
-            callback ()
-        } else {
-            window.addEventListener ("DOMContentLoaded", callback);
-        }
-    },
-
+/**
+ * DOM 加载完毕执行方法
+ * @param {Function} callback 回调函数
+ */
+webpanda.mount.onhtmlready = function (callback) {
+    var readyState = document.readyState;
+    if (readyState === 'interactive' || readyState === 'complete') {
+        callback ()
+    } else {
+        window.addEventListener ("DOMContentLoaded", callback);
+    }
 };
 
 
@@ -202,7 +200,7 @@ webpanda.config ({
  * DOM 准备完毕时执行
  * 删除多余的提示标签
  */
-webpanda.env.ready (function () {
+webpanda.onhtmlready (function () {
     document.querySelector ('body>noscript').remove ();
 });
 
@@ -216,7 +214,7 @@ webpanda.mount.Router.$.ready (function () {
 
 
 // 动态加载进度组件的数据工程
-webpanda.env.data ('component://animation/progress', {
+webpanda.ready ('component://animation/progress', {
     onresolve: function (e) {
         this.$.render ({ '--global': true });
         this.$.event ({ '--global': {

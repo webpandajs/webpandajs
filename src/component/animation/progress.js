@@ -2,7 +2,7 @@ webpanda.data ({
     name: 'component://animation/progress',
     selector: 'body',
     template: {
-        src: webpanda.env.src ('component/animation/progress.html')
+        src: webpanda.src ('component/animation/progress.html')
     },
     onpageprogress: function (e) {
         this.percent = e.percent;
