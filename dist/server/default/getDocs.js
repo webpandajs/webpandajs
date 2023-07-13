@@ -6,4 +6,4 @@
  * https://webpandajs.com/
  * https://github.com/webpandajs/webpandajs
  */
-webpanda.data({name:"server://default/getDocs",extend:webpanda.env.require("server://base"),prototype:function(){this.url="/README.md",this.method="GET",this.withCredentials=!1,this.responseType="text"}});
+webpanda.data({name:"server://default/getDocs",extend:webpanda.require("server://base"),prototype:function(){this.url="/README.md",this.method="GET",this.withCredentials=!1,this.responseType="text"}});

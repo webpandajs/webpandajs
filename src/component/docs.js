@@ -1,12 +1,12 @@
 webpanda.data ({
     name: 'component://docs',
     mount: [
-        webpanda.env.require ('server://default/getDocs', {
+        webpanda.require ('server://default/getDocs', {
             use: 'Request'
         }),
     ],
     include: [
-        webpanda.env.library ('marked/marked.min.js'),
+        webpanda.library ('marked/marked.min.js'),
     ],
     construct: function () {
         // 加载状态

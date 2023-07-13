@@ -6,4 +6,4 @@
  * https://webpandajs.com/
  * https://github.com/webpandajs/webpandajs
  */
-webpanda.data({name:"component://page/footer",template:{src:webpanda.env.src("component/page/footer.html")},mount:[webpanda.env.require("component://readme",{use:"Readme"})]});
+webpanda.data({name:"component://page/footer",template:{src:webpanda.src("component/page/footer.html")},mount:[webpanda.require("component://readme",{use:"Readme"})]});

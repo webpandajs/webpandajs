@@ -4,7 +4,7 @@ webpanda.data ({
     // 挂载
     mount: [
         // 加载数据工程
-        webpanda.env.require ('component://animation/loading', {
+        webpanda.require ('component://animation/loading', {
             use: 'Loading'
         }),
     ],

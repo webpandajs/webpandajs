@@ -3,7 +3,7 @@
         <div class="sidebar-brand ml-4" -onclick="sidebarToggled=false;" style="padding: 0.5rem 0;">
             <h1 class="font-weight-400">
                 <a href="javascript:;">
-                    <img --src="#webpanda.env.src('assets/img/logo-master.png')" class="mr-2" style="width: 30px;height: 30px;">
+                    <img --src="#webpanda.src('assets/img/logo-master.png')" class="mr-2" style="width: 30px;height: 30px;">
                     <span class="font-weight-700">{{ Readme.name }}</span> 文档
                 </a>
             </h1>
@@ -34,7 +34,7 @@
             <div class="header-nav ml-auto">
                 <ul class="nav align-items-center">
                     <!-- <li class="nav-item d-none d-md-inline-block">
-                        <a class="nav-link" href="/test" -onclick="#preventDefault;#webpanda.env.targetUrl(#node)">test</a>
+                        <a class="nav-link" href="/test" -onclick="#preventDefault;#webpanda.targetUrl(#node)">test</a>
                     </li> -->
                     <li class="nav-item ml-4">
                         <a --href="Readme.githubUrl" class="btn btn-sm btn-primary" target="_blank">Github</a>

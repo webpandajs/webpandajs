@@ -19,7 +19,7 @@ webpanda.mount.Router = webpanda.data ({
         // 始终执行home页面
         e.page ({
             name: 'page://home',
-            src: webpanda.env.src ('page/home.js'),
+            src: webpanda.src ('page/home.js'),
         });
     },
     
@@ -39,11 +39,11 @@ webpanda.mount.Router = webpanda.data ({
     onpagenotfound: function (e) {
         console.log ('onpagenotfound', e);
         // 跳转到404
-        webpanda.env.targetUrl ('/404?url=' + webpanda.URLEncode (e.url.toString ()), true);
+        webpanda.targetUrl ('/404?url=' + webpanda.URLEncode (e.url.toString ()), true);
     },
 
 
 });
 
 // 去准备 
-webpanda.mount.Router.$.ready ();
+webpanda.Router.$.ready ();

@@ -6,4 +6,4 @@
  * https://webpandajs.com/
  * https://github.com/webpandajs/webpandajs
  */
-webpanda.mount.Router=webpanda.data({name:"router",onpage:function(n){n.page({name:"page://home",src:webpanda.env.src("page/home.js")})},onpagenotfound:function(n){console.log("onpagenotfound",n),webpanda.env.targetUrl("/404?url="+webpanda.URLEncode(n.url.toString()),!0)}}),webpanda.mount.Router.$.ready();
+webpanda.mount.Router=webpanda.data({name:"router",onpage:function(a){a.page({name:"page://home",src:webpanda.src("page/home.js")})},onpagenotfound:function(a){console.log("onpagenotfound",a),webpanda.targetUrl("/404?url="+webpanda.URLEncode(a.url.toString()),!0)}}),webpanda.Router.$.ready();
