@@ -148,8 +148,9 @@ try {
     var builderIndexContents = helper.getFileContents (helper.path (builderIndexfile));
     // 替换src="/src/
     builderIndexContents = builderIndexContents.replace (/src\=\"\/src\//g, 'src="/').replace (/href\=\"\/src\//g, 'href="/');
-    // 替换配置 src="/config.js"
-    builderIndexContents = builderIndexContents.replace (/src\=[\"\']\/config.js([^\"\']{0,})[\"\']/, 'src="/config.js?version=' + builderVersion + '"');
+    // 添加版本号 src="/src/main.js" | src="/src/router.js"
+    builderIndexContents = builderIndexContents.replace (/src\=[\"\']\/main.js([^\"\']{0,})[\"\']/, 'src="/main.js?version=' + builderVersion + '"');
+    builderIndexContents = builderIndexContents.replace (/src\=[\"\']\/router.js([^\"\']{0,})[\"\']/, 'src="/router.js?version=' + builderVersion + '"');
     var builderIndexDistPath = helper.pathJoin (helper.__distname, builderIndexfile);
     helper.setFileContents (builderIndexDistPath, helper.minifyhtml (builderIndexContents, htmlminifierOptions));
     helper.console.buildlog (builderIndexDistPath);
