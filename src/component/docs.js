@@ -36,7 +36,7 @@ webpanda.data ({
          * 成功时
          */
         this.requestsuccess = function (ret) {
-            console.log ('requestsuccess', ret);
+            // console.log ('requestsuccess', ret);
             // this.data = ret;
             this.data = marked (ret.data);
             // 加载状态完成

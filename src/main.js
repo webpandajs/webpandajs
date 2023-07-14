@@ -148,7 +148,7 @@ webpanda.config ({
             this.url.query.v = builder.version;
         } else {
             // 调试模式加上时间戳禁止页面缓存
-            this.url.query.debug = Date.parse(new Date());
+            // this.url.query.debug = Date.parse(new Date());
         }
 
         if (['js', 'css', 'less', 'scss', 'sass'].indexOf (this.type) >= 0) {
