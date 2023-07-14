@@ -10,7 +10,7 @@ webpanda.data ({
     ],
     construct: function () {
         // 加载状态
-        this.loading = false;
+        this.loading = true;
         // 数据
         this.data = null;
         // 错误信息
