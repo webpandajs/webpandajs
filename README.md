@@ -767,8 +767,101 @@ webpanda.data.ready ('component://animation/progress', {
 
 浏览记录相关操作。
 
+> 注意，当页面不存在时（触发 onpagenotfound 事件），是不会储存（错误页面）浏览记录的。
+
+```javascript
+// 上一页的日志列表
+console.log (webpanda.history.backList);
+// 获取上一页的数量
+console.log (webpanda.history.backList.length);
+
+// 下一页的日志列表
+console.log (webpanda.history.forwardList);
+// 获取下一页的数量
+console.log (webpanda.history.forwardList.length);
+
+// 当前页面的日志数据对象
+console.log (webpanda.history.current);
+// 获取当前页面的上一步的数量
+var lastLength = (webpanda.history.current && webpanda.history.current.getLastLength ()) || 0;
+// 获取当前页面的下一步的数量
+var nextLength = (webpanda.history.current && webpanda.history.current.getNextLength ()) || 0;
 
 
+/**
+ * back(callback) 上一页
+ * 在浏览器历史记录里前往上一页，用户可点击浏览器左上角的返回 (←) 按钮模拟此方法。等价于 `webpanda.history.go(-1)` 。
+ * 当浏览器会话历史记录处于第一页时调用此方法没有效果，而且也不会报错。
+ */
+webpanda.history.back ();
+// 或者自定义跳转函数
+webpanda.history.back (function (url) {
+    // url 是一个字符串
+});
+
+
+/**
+ * forward(callback) 下一页
+ * 在浏览器历史记录里前往下一页，用户可点击浏览器左上角的前进 (→) 按钮模拟此方法。等价于 `webpanda.history.go(1)` 。
+ * 当浏览器历史栈处于最顶端时 (当前页面处于最后一页时) 调用此方法没有效果也不报错。
+ */
+webpanda.history.forward ();
+// 或者自定义跳转函数
+webpanda.history.forward (function (url) {
+    // url 是一个字符串
+});
+
+
+/**
+ * go(number,callback) 跳转到某一页
+ * 通过当前页面的相对位置从浏览器历史记录 (会话记录) 加载页面。
+ * 比如：参数为 `-1` 的时候为上一页，参数为 `1` 的时候为下一页。
+ * 当整数参数超出界限时，例如: 如果当前页为第一页，前面已经没有页面了，我传参的值为 `-1`，那么这个方法没有任何效果也不会报错。
+ * 调用没有参数的 `webpanda.history.go()` 方法或者参数值为0 时，也没有任何效果也不会报错。
+ */
+webpanda.history.go (-1);// 等价 webpanda.history.back ()
+webpanda.history.go (1);// 等价 webpanda.history.forward ()
+webpanda.history.go (2);// 到下2页
+// 或者自定义跳转函数
+webpanda.history.go (1, function (url) {
+    // url 是一个字符串
+});
+
+
+/**
+ * last(callback) 上一步
+ * 在浏览器历史记录里前往当前页面的上一步。等价于 `webpanda.history.step(-1)` 。
+ */
+webpanda.history.last ();// 等价于 webpanda.history.step (-1);
+// 或者自定义跳转函数
+webpanda.history.last (function (url) {
+    // url 是一个字符串
+});
+
+
+/**
+ * next(callback) 下一步
+ * 在浏览器历史记录里前往当前页面的下一步。等价于 `webpanda.history.step(1)` 。
+ */
+webpanda.history.next ();// 等价于 webpanda.history.step (1);
+// 或者自定义跳转函数
+webpanda.history.next (function (url) {
+    // url 是一个字符串
+});
+
+
+/**
+ * step(number,callback) 跳转到某一步
+ * 通过当前页面的相对位置从浏览器历史记录 (会话记录) 加载页面的某一步。
+ */
+webpanda.history.step (-1);// 等价 webpanda.history.last ()
+webpanda.history.step (1);// 等价 webpanda.history.next ()
+webpanda.history.step (2);// 到下2步
+// 或者自定义跳转函数
+webpanda.history.step (1, function (url) {
+    // url 是一个字符串
+});
+```
 
 
 
@@ -777,6 +870,91 @@ webpanda.data.ready ('component://animation/progress', {
 将自定义变量挂载到框架原型上。
 
 
+
+## URLEncode
+
+编码 URL ，支持数组、对象、字符串。
+
+```javascript
+var test = "abc@#$%&*^xyz";
+var code = webpanda.URLEncode (test);
+console.log(code);// abc%40%23%24%25%26*%5Exyz
+
+var test = ["abc@#xyz","123$%456"];
+var code = webpanda.URLEncode (test);
+console.log(code);// ["abc%40%23xyz", "123%24%25456"]
+
+var test = {a:"abc@#xyz",b:"123$%456"};
+var code = webpanda.URLEncode (test);
+console.log(code);// {a: "abc%40%23xyz", b: "123%24%25456"}
+```
+
+## URLDecode
+
+解码 URL ，支持数组、对象、字符串。
+
+```javascript
+var test = "abc%40%23%24%25%26*%5Exyz";
+var code = webpanda.URLDecode (test);
+console.log(code);// abc@#$%&*^xyz
+
+var test = ["abc%40%23xyz", "123%24%25456"];
+var code = webpanda.URLDecode (test);
+console.log(code);// ["abc@#xyz", "123$%456"]
+
+var test = {a: "abc%40%23xyz", b: "123%24%25456"};
+var code = webpanda.URLDecode (test);
+console.log(code);// {a: "abc@#xyz", b: "123$%456"}
+```
+
+## URLQueryEncode
+
+将关联数组和对象生成 URL Query 字符串。
+
+```javascript
+var test1 = {a: "a1", b: "b1", c: "c1"};
+var queryString = webpanda.URLQueryEncode (test1);
+console.log (queryString);// a=a1&b=b1&c=c1
+
+var test2 = {a: {0: "b1", 1: "a1", c: "c1"}};
+var queryString2 = webpanda.URLQueryEncode (test2);
+console.log (queryString2);// a[0]=b1&a[1]=a1&a[c]=c1
+```
+
+
+## URLQueryDecode
+
+将URL字符串的query部分, 解析成一个对象。
+
+```javascript
+var queryObject = webpanda.URLQueryDecode ("a=a1&b=b1&c=c1");
+console.log (queryObject);// {a: "a1", b: "b1", c: "c1"}
+
+var queryObject2 = webpanda.URLQueryDecode ("a[1]=a1&a[0]=b1&a[c]=c1");
+console.log (queryObject2);// {a: {0: "b1", 1: "a1", c: "c1"}}
+```
+
+
+## HTMLEncode
+
+编码HTML标签。
+
+```javascript
+var test = "<span>这是测试</span>";
+var code = webpanda.HTMLEncode (test);
+console.log (code);// &lt;span&gt;这是测试&lt;/span&gt;
+```
+
+
+## HTMLDecode
+
+解码HTML实体。
+
+```javascript
+var test = "&lt;span&gt;这是测试&lt;/span&gt;";
+var code = webpanda.HTMLDecode (test);
+console.log (code);// <span>这是测试</span>
+```
 
 
 

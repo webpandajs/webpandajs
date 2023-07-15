@@ -149,6 +149,20 @@ webpanda.config ({
         } else {
             // 调试模式加上时间戳禁止页面缓存
             // this.url.query.debug = Date.parse(new Date());
+
+            var dates = new Date ();
+            var times = [
+                dates.getFullYear (),// 年
+                dates.getMonth ()+1,// 月
+                dates.getDate (),// 日
+                // dates.getHours (),// 时
+                // dates.getMinutes (),// 分
+                // dates.getSeconds (), //秒
+                // dates.getMilliseconds () //毫秒
+            ];
+            
+            // 缓存一天
+            this.url.query.d = times.join ('');
         }
 
         if (['js', 'css', 'less', 'scss', 'sass'].indexOf (this.type) >= 0) {
@@ -166,7 +180,7 @@ webpanda.config ({
             });
             handle.append ();
         } else {
-    
+            
             var handle = new webpanda.mount.Ajax ({
                 url: this.url,
                 method: 'GET',
