@@ -22,10 +22,28 @@ webpanda.data ({
          * 加载数据
          */
         this.load = function () {
+            
+            var dates = new Date ();
+            var times = [
+                dates.getFullYear (),// 年
+                dates.getMonth ()+1,// 月
+                dates.getDate (),// 日
+                dates.getHours (),// 时
+                // dates.getMinutes (),// 分
+                // dates.getSeconds (), //秒
+                // dates.getMilliseconds () //毫秒
+            ];
+            
+            // 缓存一天
+            var query = {
+                d: times.join ('')
+            }
+
             this.loading = true;
             this.error = null;
             this.data = null;
             this.Request.ajax ({
+                query: query,
                 isLoading: false,
                 onsuccess: this.requestsuccess,
                 onerror: this.requesterror

@@ -33,6 +33,7 @@ webpanda.data ({
          * AJAX 请求
          * @param {Object} config 配置
          * @param {Object} config.body 请求body 
+         * @param {Object} config.query 请求URL query
          * @param {Boolean} config.isFormData 是否使用 FormData 格式
          * @param {Boolean} config.isLoading 是否使用加载动画
          * @param {Function} config.onprogress 上传进度事件
@@ -70,8 +71,17 @@ webpanda.data ({
                 body = that.toFormData (body);
             }
 
+            if (config.query && typeof config.query == 'object') {
+                var url = webpanda.url (that.url);
+                for (var i in config.query) {
+                    url.query[i] = config.query[i];
+                }
+            } else {
+                var url = that.url;
+            }
+            
             var ajax = new webpanda.mount.Ajax ({
-                url: that.url,
+                url: url,
                 body: body,
                 header: that.header,
                 method: that.method,
