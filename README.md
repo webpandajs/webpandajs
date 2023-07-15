@@ -869,6 +869,29 @@ webpanda.history.step (1, function (url) {
 
 将自定义变量挂载到框架原型上。
 
+```javascript
+// 定义一个函数
+webpanda.mount.onhtmlready = function (callback) {
+    var readyState = document.readyState;
+    if (readyState === 'interactive' || readyState === 'complete') {
+        callback ();
+    } else {
+        window.addEventListener ("DOMContentLoaded", callback);
+    }
+};
+
+// 使用方式：因为挂载到原型上了，可以直接省略 `webpanda.mount` 使用
+webpanda.onhtmlready (function () {
+    // ...
+});
+// 也可以写全使用
+webpanda.mount.onhtmlready (function () {
+    // ...
+});
+```
+
+
+
 
 
 ## URLEncode
@@ -984,12 +1007,445 @@ console.log (code);// <span>这是测试</span>
 # 数据工程定义
 
 
+## name
+
+数据工程的名称。
+
+每个工程都有一个自定义的名称标识，并且这个名称标识必须是全局唯一。
+
+> 注意，如果未定义名称，将会自动生成一个全局唯一名称。
+
+```javascript
+webpanda.data ({
+    name: "test",
+});
+```
+
+## abstract
+
+数据工程的抽象状态。
+
+为了实现多态，当某些数据工程只希望作为父类使用，不希望被渲染执行。也就是我们从上层设计角度，就不希望有些数据工程被业务操作。
+
+> 抽象的数据工程，不会初始化构造数据，也不会初始化原型数据，以及不设置事件等等。  
+> 并且抽象的数据工程不能作为页面数据工程渲染或执行。
+
+```javascript
+webpanda.data ({
+    abstract: true,
+});
+```
+
+
+## selector
+
+数据工程的筛选器。
+
+数据工程渲染时会将节点渲染到该筛选器节点上。如果不设置，那么就是会渲染到编译器的默认节点上。
+
+```javascript
+webpanda.data ({
+    selector: "body", // 将工程渲染到 <body></body> 节点容器中
+});
+```
+
+> 定义值是包含一个或多个要匹配的选择器的 DOM 字符串 DOMString。   
+> 该字符串必须是有效的CSS选择器字符串；更多参考 [document\.querySelector()](https://developer.mozilla.org/zh-CN/docs/Web/API/Document/querySelector) 方法。
+
+
+## template
+
+数据工程的模板。
+
+模板定义支持字符串、参数对象或`webpanda.url`对象。
+
+> 注意，在继承模板时，URL的方式具有优先级。  
+> 这是因为字符串模板会先执行赋值，而URL包含是最后执行，会覆盖前面的模板数据。
+
+```javascript
+// 以字符串的方式定义
+webpanda.data ({
+    template: '<canvas webpanda-after="getCanvasNode (#node)" webpanda-if="s"></canvas>',
+});
+
+// 以对象的方式定义
+webpanda.data ({
+    template: {
+        // 也支持 webpanda.url 对象，如：webpanda.url ('index.html')
+        src: 'index.html',
+        // 追加的方式,追加数据而不是覆盖: prepend 从前面附加|append 从后面附加
+        mode: "prepend",
+        // 索引。默认的模板索引是0，支持负数，越大的索引拼凑时越排在前面。重复的索引可以覆盖或追加方式config.mode
+        index: 0,
+    },
+});
+
+
+// 以`webpanda.url`对象定义
+webpanda.data ({
+    template: webpanda.url ('index.html'),
+});
+```
+
+## include
+
+数据工程的包含资源文。
+
+引入工程文件、模板文件等。并且，相同的资源只会包含一次（包含状态由框架统一管理）。
+
+> 注意，include 默认情况下是异步包含引入，可以设置async属性: false 表示同步, true表示异步。
+
+```javascript
+// 包含一个字符串路径
+webpanda.data ({
+    include: '/library/test.css',
+});
+
+// 支持对象
+webpanda.data ({
+    include: {
+        // 资源路径, 可以是一个webpanda.url创建的对象
+        src: '/library/test.css',
+        // 是否异步, 默认true(异步)
+        async: true,
+        // 文件类型, 不设置默认获取资源扩展后缀，无扩展后缀的默认为 text
+        type: 'text',
+
+        // 队列升序加载: 是一个数字，默认为null
+        // 同一个队列编号，以定义的顺序执行，不同的队列编号，以升序的顺序执行。
+        // 队列加载会依次按升序顺序加载，与同步、异步属性不冲突
+        // queue: 1,
+        queue: null,
+
+        // 回调函数, 无论成功还是失败都会执行
+        onfinally: function (include) {
+            console.log (this);// 当前数据工程对象
+            console.log (include);// include对象
+        },
+        // 成功回调函数
+        onresolve: function (include) {
+            console.log (this);// 当前数据工程对象
+            console.log (include);// include对象
+        },
+        // 失败回调函数
+        onreject: function (include) {
+            console.log (this);// 当前数据工程对象
+            console.log (include);// include对象
+        },
+    },
+});
+
+
+// 支持多个
+webpanda.data ({
+    include: [
+        {
+            src: webpanda.url('/library/test.css'),
+            async: false,
+        },
+        '/library/test2.js',
+        webpanda.url('/library/test3.js'),
+
+        // 使用 queue 属性来指定队列编号
+        // 同一个队列编号，以定义的顺序执行，不同的队列编号，以升序的顺序执行。
+        // 相对于由队列编号的第一个执行
+        { src: 'http://example.com/test_1.js', queue: 1 },
+        // 相对于由队列编号的最后执行
+        { src: 'http://example.com/test_3.js', queue: 2 },
+        // 相对于由队列编号的第二个执行
+        { src: 'http://example.com/test_2.js', queue: 1 },
+    ]
+});
+```
+
+## mount
+
+数据工程的挂载。
+
+指定其他数据工程，挂载到当前数据工程的原型上。主要是解决引入的其他数据工程需要同步准备的问题。
+
+也就是说，要在当前工程使用其他的工程，则需要把其他的工程挂载在当前工程中。被挂载的工程，只要存在，则会自动去准备。而在 `include` 包含引入的数据工程，是不会自动准备的。
+
+> 特别注意， `include` 包含引入的资源文件是默认异步，而在 `mount` 中包含引入的资源地址默认同步加载。
+
+```javascript
+webpanda.data ({
+    mount: {
+        // 数据工程名称
+        name: 'test',
+        // 也支持 webpanda.url 对象，如：webpanda.url ('test.js')
+        src: 'test.js',
+        // 工程克隆名称
+        clone: null,
+        // 分配到当前数据工程的原型属性名称
+        use: 'Test',
+        // 将数据工程挂载到当前数据工程的标签上
+        tag: false,
+    }
+});
+
+
+// 支持多个
+webpanda.data ({
+    mount: [
+        {
+            name: 'test',
+            src: 'test.js',
+            use: 'Test',
+        },
+        {
+            name: 'test2',
+            src: 'test2.js',
+            use: 'Test2',
+            tag: true,// 在模板中，可以使用 <Test2 /> 来执行并且渲染该工程
+        },
+
+        // 支持挂载多次
+        {
+            name: 'test',
+            src: 'test.js',
+            use: 'TestSecond',
+        },
+    ]
+});
+
+
+
+/**
+ * 更多方式
+ */
+
+webpanda.data ({
+
+    /**
+     * 解析为：
+     * {src: 'xxxxxxx', name: 'test', clone: 'test1', use: 't1', tag:false}
+     */
+    mount: {
+        src: 'xxxxxxx',
+        name: 'test',
+        clone: {
+            name: 'test1',
+            use: 't1'
+        }
+    },
+
+    /**
+     * 解析为：
+     * {src: 'xxxxxxx', name: 'test', clone: 'test1', use: 'test1', tag:false}
+     */
+    mount: {
+        src: 'xxxxxxx',
+        name: 'test',
+        clone: 'test1',// 默认解析为 clone:{name: 'test1', use: 'test1', tag:false}
+    },
+
+    /**
+     * 会解析两种：
+     * {src: 'xxxxxxx', name: 'test', use: 'test', tag:false}
+     * {src: 'xxxxxxx', name: 'test', clone: 'test1', use: 'test1', tag:false}
+     */
+    mount: {
+        src: 'xxxxxxx',
+        name: 'test',
+        clone: 'test1',
+        use: true,// 需要源数据工程
+    },
+
+    /**
+     * 会解析两种：
+     * {src: 'xxxxxxx', name: 'test', use: 'TestUse', tag:false}
+     * {src: 'xxxxxxx', name: 'test', clone: 'test1', use: 't1', tag:false}
+     */
+    mount: {
+        src: 'xxxxxxx',
+        name: 'test',
+        clone: {
+            name: 'test1',
+            use: 't1'
+        },
+        use: 'TestUse',// 需要源数据工程
+    },
+
+
+    /**
+     * 挂载如何克隆多份
+     * {src: 'xxxxxxx', name: 'test', clone: 'test1', use: 't1', tag:false}
+     * {src: 'xxxxxxx', name: 'test', clone: 'test2', use: 'test2', tag:false}
+     * {src: 'xxxxxxx', name: 'test', clone: 'test3', use: 'test3', tag:false}
+     */
+    mount: {
+        src: 'xxxxxxx',
+        name: 'test',
+        clone: [
+            {
+                name: 'test1',
+                use: 't1'
+            },
+            {
+                name: 'test2',
+            },
+            // 支持字符串
+            'test3'
+        ]
+    },
+
+    /**
+     * 挂载如何克隆多份
+     * {src: 'xxxxxxx', name: 'test', use: 'TestUse', tag:false}
+     * {src: 'xxxxxxx', name: 'test', clone: 'test1', use: 't1', tag:false}
+     * {src: 'xxxxxxx', name: 'test', clone: 'test2', use: 'test2', tag:false}
+     * {src: 'xxxxxxx', name: 'test', clone: 'test3', use: 'test3', tag:false}
+     */
+    mount: {
+        src: 'xxxxxxx',
+        name: 'test',
+        use: 'TestUse',// 需要源数据工程
+        clone: [
+            {
+                name: 'test1',
+                use: 't1'
+            },
+            {
+                name: 'test2',
+            },
+            // 支持字符串
+            'test3'
+        ]
+    },
+
+    /**
+     * 支持tag
+     * 挂载多份
+     * {src: 'xxxxxxx', name: 'test', use: false, tag: 'TestTag'}
+     * {src: 'xxxxxxx', name: 'test', clone: 'test1', use: 't1', tag: 'TAG'}
+     * {src: 'xxxxxxx', name: 'test', clone: 'test2', use: 'test2', tag: 'test2'}
+     */
+    mount: {
+        src: 'xxxxxxx',
+        name: 'test',
+        use: false,// 为布尔值，false表示不设置use
+        tag: 'TestTag',// 需要源数据工程
+        clone: [
+            {
+                name: 'test1',
+                use: 't1',
+                tag: 'TAG'
+            },
+            {
+                name: 'test2',
+                tag: true,// 启用tag，并且命名与name一致
+            },
+        ]
+    },
+
+});
+```
+
+
+## extend
+
+数据工程的继承。
+
+一个数据工程支持继承多个数据工程、继承多次某个数据工程，代码复用，提高维护性。
+
+```javascript
+webpanda.data ({
+    extend: {
+        // 数据工程的名称
+        name: 'test',
+        // 也支持 webpanda.url 对象，如：webpanda.url ('test.js')
+        src: 'test.js',
+        // 忽略继承
+        ignore: {
+            event: {
+                global: '*',
+            }
+        }
+    }
+});
+
+//支持继承多个
+webpanda.data ({
+    extend: [
+        {
+            name: 'test',
+            src: 'test.js',
+        },
+        {
+            name: 'test2',
+            src: 'test2.js',
+        },
+
+        // 支持继承多次
+        {
+            name: 'test',
+            src: 'test.js',
+            ignore: {
+                event: {
+                    global: '*',
+                }
+            }
+        }
+    ]
+});
+
+
+```
+
+继承遵守如下规则：
+
+> 1) 越远的父级越先准备。  
+> 2) 越远的父级定义结构越优先执行，越近的父级定义结构会覆盖越远父级定义结构。  
+> 3) selector、template 在派生数据工程未定义的情况下才继承父级的 selector、template 定义。  
+> 4) 只是继承父级的定义结构，不是继承父级最新动态属性值。
+
+越远的父级越先执行，说的是继承父级执行的先后顺序。而在单独的工程内，定义的多个继承是按照从上到下，先定义的顺序先执行：
+
+```javascript
+webpanda.data ({
+	name: "t1",
+    // 继承
+    extend: [
+        "a1",
+        "a2",
+        "a3",
+    ]
+})
+
+webpanda.data ({
+	name: "t2",
+    // 继承
+    extend: [
+        "t1",
+        "b2",
+        "b3",
+    ]
+})
+
+webpanda.data ({
+	name: "test",
+    // 继承
+    extend: [
+        "t2",
+    ]
+})
+
+// 执行顺序是
+// [ a1 > a2 > a3 > t1 ] [ > b2 > b3 > t2 ] > test
+```
+
+
+
+
+
 
 # 数据工程对象
 
 
-
-
+```javascript
+$.template('vvvv', {index: 1}).render();
+```
 
 ## 页面数据工程
 
