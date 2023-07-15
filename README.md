@@ -1349,6 +1349,15 @@ webpanda.data ({
 
 一个数据工程支持继承多个数据工程、继承多次某个数据工程，代码复用，提高维护性。
 
+
+继承遵守如下规则：
+
+> 1) 越远的父级越先准备。  
+> 2) 越远的父级定义结构越优先执行，越近的父级定义结构会覆盖越远父级定义结构。  
+> 3) selector、template 在派生数据工程未定义的情况下才继承父级的 selector、template 定义。  
+> 4) 只是继承父级的定义结构，不是继承父级最新动态属性值。
+
+
 ```javascript
 webpanda.data ({
     extend: {
@@ -1389,16 +1398,39 @@ webpanda.data ({
         }
     ]
 });
-
-
 ```
 
-继承遵守如下规则：
+忽略选项的结构体：
 
-> 1) 越远的父级越先准备。  
-> 2) 越远的父级定义结构越优先执行，越近的父级定义结构会覆盖越远父级定义结构。  
-> 3) selector、template 在派生数据工程未定义的情况下才继承父级的 selector、template 定义。  
-> 4) 只是继承父级的定义结构，不是继承父级最新动态属性值。
+```shell
+[成员属性]: '*',                #忽略父级的全部某项
+[成员属性]: {
+    global: '*',                #忽略所有父级的全部某项
+    global: [value, value1],    #忽略所有父级数据工程的指定某项
+    local: {
+        key: '*',               #忽略继承中key父级数据工程的所有某项
+        key1: [value, value1],  #忽略继承中key1父级数据工程的指定某项
+    }
+}
+```
+
+> 上列结构体中，global表示全局，local表示局部某个工程。
+
+下表解释上列结构体中的key和value分别代表值类型：
+
+```shell
+| 成员属性  | 可设置        | key                  | value                  |
+| --------- | ------------- | -------------------- | ---------------------- |
+| extend    | global、local | 直系派生数据工程名称 | 直系父级数据工程名称   |
+| event     | global、local | 数据工程名称         | 事件名称               |
+| mount     | global、local | 数据工程名称         | 数据工程名称           |
+| include   | global、local | 数据工程名称         | 资源地址src            |
+| selector  | global        | （不支持）           | 数据工程名称           |
+| template  | global        | （不支持）           | 数据工程名称           |
+| prototype | global、local | 数据工程名称         | 原型数据一维单元键名称 |
+| construct | global、local | 数据工程名称         | 构造数据一维单元键名称 |
+```
+
 
 越远的父级越先执行，说的是继承父级执行的先后顺序。而在单独的工程内，定义的多个继承是按照从上到下，先定义的顺序先执行：
 
@@ -1436,6 +1468,48 @@ webpanda.data ({
 ```
 
 
+> 数据工程之间不要相互继承！数据工程之间不要相互继承！数据工程之间不要相互继承！  
+> 数据工程之间不要相互继承，这样会造成数据工程初始化缺陷。在执行派生数据工程时，会先准备被继承的数据工程文件，然后要等待被继承的数据工程准备完毕才执行派生数据工程。  
+> 如果派生数据工程与被继承数据工程相互继承，这就出现了数据工程未初始化完成（还在准备状态中），框架不会终止数据工程的继承操作，但会在控制台面板中输出错误信息。  
+
+ 
+## construct
+
+数据工程的构造。
+
+
+
+
+## prototype
+
+数据工程的原型。
+
+
+
+## onpage
+
+
+## onpagenotfound
+
+
+## onpageprogress
+
+
+## onpaged
+
+## onpageurlchange
+
+
+## onpagedestroy
+
+
+## onurlchange
+
+
+## onready
+
+
+## onexecute
 
 
 
@@ -1455,6 +1529,13 @@ $.template('vvvv', {index: 1}).render();
 执行的优先级：
 先执行页面数据工程事件，再执行局部数据工程事件，最后执行全局数据工程事件
 this.$.event ();
+
+在非原生事件中，只对下面的非原生事件有控制效果：
+```shell
+onpage|onpagenotfound|onpageprogress|onpaged|onpageurlchange|onpagedestroy|onurlchange
+```
+
+
 
 
 # 模板语法
