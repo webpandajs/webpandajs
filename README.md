@@ -980,30 +980,6 @@ console.log (code);// <span>这是测试</span>
 ```
 
 
-
-# 概念
-
-
-## 局部数据工程
-
-局部渲染、局部事件使用
-
-## 全局数据工程
-
-全局渲染、全局事件使用
-
-
-## 单例模式
-
-因为是单例模式，所以数据工程多次渲染再同一个页面上需要进行拷贝。
-
-## 全局数据流
-
-
-
-
-
-
 # 数据工程定义
 
 
@@ -1477,6 +1453,45 @@ webpanda.data ({
 
 数据工程的构造。
 
+构造的属性会添加观察者，用于模板渲染的响应式数据操作。
+
+> 特别注意，不要在构造数据中赋值为其他的数据工程。因为这样在删除该数据工程的时候，会把其他的数据工程数据观察者信息删除。
+
+```javascript
+// Object 定义的方式
+webpanda.data ({
+    construct: {
+        test: { 
+            // ...
+        },
+        testFunc: function() {
+            // 函数体内的this就是当前数据工程对象
+            console.log (this);
+        };
+    },
+});
+
+// Function 定义的方式
+webpanda.data ({
+    construct: function () {
+        // 当前的数据工程对象
+        console.log (webpanda.data.this);
+        
+        // 可以作为私有内部变量
+        var prototype = webpanda.data.this.$.prototype;
+
+        // 子属性禁用观察者
+        this.unobtest = webpanda.observer.disable ({});
+
+        this.test = "这是测试";
+        this.message = "你好，webpanda.js!";
+        this.testFunc = function() {
+            // 函数体内的this就是当前数据工程对象
+            console.log (this);
+        };
+    },
+});
+```
 
 
 
@@ -1484,35 +1499,705 @@ webpanda.data ({
 
 数据工程的原型。
 
+原型定义与构造类似，但与构造不同的是，构造属性不会添加观察者，用于非响应式的操作。
+
+```javascript
+// Object 定义的方式
+webpanda.data ({
+    prototype: {
+        test: { 
+            // ...
+        },
+        testFunc: function () {
+            // 函数体内的this就是当前数据工程对象
+            console.log (this);
+        };
+    },
+});
+
+// Function 定义的方式
+webpanda.data ({
+    prototype: function () {
+        // 当前的数据工程对象
+        console.log (webpanda.data.this);
+        
+        // 可以作为私有内部变量
+        var prototype = webpanda.data.this.$.prototype;
+
+        this.test = "这是测试";
+        this.message = "你好，webpanda.js!";
+        this.testFunc = function () {
+            // 函数体内的this就是当前数据工程对象
+            console.log (this);
+        };
+    },
+});
+```
+
+
 
 
 ## onpage
 
+页面开始执行的事件。
+
+该事件必须通过使用 `e.page()` 回调函数指定页面数据工程信息，如果不执行页面将停止加载。
+
+```javascript
+webpanda.data ({
+    onpage: function (e) {
+        // 当前数据工程对象
+        console.log (this);
+        // 事件名称
+        console.log (e.name);
+        // 当前页面执行时间
+        console.log (e.runtime);
+        // 是一个函数, 阻止事件冒泡, 后面未执行的事件回调函数不再执行
+        console.log (e.stopPropagation);
+        // webpanda.url 对象
+        console.log (e.url);
+
+        /**
+         * 路由设置信息
+         * {
+         *      // 数据工程名称
+         *      name: 'test',
+         *      // 数据工程克隆名称
+         *      clone: null,
+         *      // 数据工程文件路径
+         *      src: '/src/page/test.js',
+         *      // 参数
+         *      argument: {
+         *          // ...
+         *      }
+         * }
+         */
+        console.log (e.setting);
+        
+
+        // 如已经设置了，直接执行：可能来自 工程 page 方法的执行
+        if (typeof this.setting != 'undefined') {
+            e.page (e.setting);
+        } 
+        // 其他自定义、自动化页面路由
+        else if (typeof e.url.path[1] != 'undefined' && e.url.path[1] == 'test') {
+            e.page ({
+                name: "test",// 工程名称
+                src: "/src/test.js",// 工程源文件
+            });
+        }
+    },
+
+});
+```
+
 
 ## onpagenotfound
+
+页面不存在的事件。
+
+
+```javascript
+webpanda.data ({
+    onpagenotfound: function (e) {
+        // 当前数据工程对象
+        console.log (this);
+        // 事件名称
+        console.log (e.name);
+        // 当前页面执行时间
+        console.log (e.runtime);
+        // 是一个函数, 阻止事件冒泡, 后面未执行的事件回调函数不再执行
+        console.log (e.stopPropagation);
+        // webpanda.url 对象
+        console.log (e.url);
+    },
+});
+```
 
 
 ## onpageprogress
 
+页面生命周期进度的事件。
+
+```javascript
+webpanda.data ({
+    onpageprogress: function (e) {
+        // 当前数据工程对象
+        console.log (this);
+        // 事件名称
+        console.log (e.name);
+        // 当前页面执行时间
+        console.log (e.runtime);
+        // 是一个函数, 阻止事件冒泡, 后面未执行的事件回调函数不再执行
+        console.log (e.stopPropagation);
+        // webpanda.url 对象
+        console.log (e.url);
+
+        // 总进度
+        console.log (e.total);
+        // 已加载进度
+        console.log (e.loaded);
+        // 已加载进度百分比
+        console.log (e.percent);
+    },
+
+});
+```
+
 
 ## onpaged
 
+页面最后执行的事件。
+
+```javascript
+webpanda.data ({
+    onpaged: function (e) {
+        // 当前数据工程对象
+        console.log (this);
+        // 事件名称
+        console.log (e.name);
+        // 当前页面执行时间
+        console.log (e.runtime);
+        // 是一个函数, 阻止事件冒泡, 后面未执行的事件回调函数不再执行
+        console.log (e.stopPropagation);
+        // webpanda.url 对象
+        console.log (e.url);
+    },
+});
+```
+
+
 ## onpageurlchange
+
+页面路由改变跳转页面的事件。
+
+```javascript
+webpanda.data ({
+    onpageurlchange: function (e) {
+        // 当前数据工程对象
+        console.log (this);
+        // 事件名称
+        console.log (e.name);
+        // 当前页面执行时间
+        console.log (e.runtime);
+        // 是一个函数, 阻止事件冒泡, 后面未执行的事件回调函数不再执行
+        console.log (e.stopPropagation);
+        // webpanda.url 对象
+        console.log (e.url);
+
+        // e.accept 与 e.ignore 方法使用
+        if (confirm ("你确定要跳转页面么?")) {
+            e.accept ();// 跳转 
+        } else {
+            e.ignore ();// 禁止跳转 
+        }
+        
+    },
+});
+```
+
 
 
 ## onpagedestroy
 
+页面离开销毁的事件。
+
+```javascript
+webpanda.data ({
+    onpagedestroy: function (e) {
+        // 当前数据工程对象
+        console.log (this);
+        // 事件名称
+        console.log (e.name);
+        // 当前页面执行时间
+        console.log (e.runtime);
+        // 是一个函数, 阻止事件冒泡, 后面未执行的事件回调函数不再执行
+        console.log (e.stopPropagation);
+        // webpanda.url 对象
+        console.log (e.url);
+
+        /**
+         * 当前路由的设置信息
+         * 注意，不是销毁的页面路由信息，而是新的、将要跳转的新页面的路由设置信息
+         * {
+         *      // 数据工程名称
+         *      name: 'test',
+         *      // 数据工程克隆名称
+         *      clone: null,
+         *      // 数据工程文件路径
+         *      src: '/src/page/test.js',
+         *      // 参数
+         *      argument: {
+         *          // ...
+         *      }
+         * }
+         */
+        console.log (e.setting);
+    },
+});
+```
+
 
 ## onurlchange
+
+当URL发送改变时，触发该事件。
+
+> 注意，`onpageurlchange()` 事件触发时（也就是页面跳转时），该事件不会被触发。
+
+```javascript
+webpanda.data ({
+    onurlchange: function (e) {
+        // 当前数据工程对象
+        console.log (this);
+        // 事件名称
+        console.log (e.name);
+        // 当前页面执行时间
+        console.log (e.runtime);
+        // 是一个函数, 阻止事件冒泡, 后面未执行的事件回调函数不再执行
+        console.log (e.stopPropagation);
+        // webpanda.url 对象
+        console.log (e.url);
+
+    },
+
+});
+```
 
 
 ## onready
 
+当前数据工程准备完成的事件。
+
+```javascript
+webpanda.data ({
+    onready: function (e) {
+        // 当前数据工程对象
+        console.log (this);
+        // 事件名称
+        console.log (e.name);
+        // 当前页面执行时间
+        console.log (e.runtime);
+        // 是一个函数, 阻止事件冒泡, 后面未执行的事件回调函数不再执行
+        console.log (e.stopPropagation);
+
+    },
+
+});
+```
+
 
 ## onexecute
 
+当前数据工程执行之前的事件。
+
+> 数据工程对象执行 `$.page()`、`$.execute()` 方法或者作为页面数据工程时，会触发该事件。
+> 可以使用数据工程对象的 `$.pause()` 、`$.start()`、`$.stop()` 等相关方法，对数据工程的执行状态进行操作。
+
+```javascript
+webpanda.data ({
+    onexecute: function (e) {
+        // 当前数据工程对象
+        console.log (this);
+        // 事件名称
+        console.log (e.name);
+        // 当前页面执行时间
+        console.log (e.runtime);
+        // 是一个函数, 阻止事件冒泡, 后面未执行的事件回调函数不再执行
+        console.log (e.stopPropagation);
+
+        // 数据工程对象执行的自定义参数
+        // 如：this.$.execute ({id:1,n:2}); 这里的 {id:1,n:2} 就是 e.argument 
+        console.log (e.argument);
+
+        // 全局暂停执行
+        this.$.pause ();
+        // 只暂停执行
+        e.pause ();
+
+        // 全局开始执行
+        this.$.start ();
+        // 只开始执行
+        e.start ();
+
+        // 全局停止执行
+        this.$.stop ();
+        // 只停止执行
+        e.stop ();
+    },
+
+});
+```
+
+## onexecuted
+
+当前数据工程完成执行的事件。
+
+> 数据工程对象执行 `$.page()`、`$.execute()` 方法或者作为页面数据工程时，会触发该事件。  
+> 特别注意：在数据工程执行时，当数据工程对象的 `$.stop()` 等相关方法使用后，该事件不会被执行。
 
 
+```javascript
+webpanda.data ({
+    onexecuted: function (e) {
+        // 当前数据工程对象
+        console.log (this);
+        // 参考 onexecute
+        console.log (e);
+    },
+
+});
+```
+
+## onexecutestart
+
+当前数据工程开始执行的事件。
+
+> 在数据工程执行时，使用数据工程对象 `$.start()` 等相关方法会触发该事件。
+
+```javascript
+webpanda.data ({
+    onexecutestart: function (e) {
+        // 当前数据工程对象
+        console.log (this);
+        // 参考 onexecute
+        console.log (e);
+    }
+});
+```
+
+## onexecutepause
+
+当前数据工程暂停执行的事件。
+
+> 在数据工程执行时，使用数据工程对象 `$.pause()` 等相关方法会触发该事件。
+
+```javascript
+webpanda.data ({
+    onexecutepause: function (e) {
+        // 当前数据工程对象
+        console.log (this);
+        // 参考 onexecute
+        console.log (e);
+    }
+});
+```
+
+
+## onexecutestop
+
+当前数据工程停止执行的事件。
+
+> 在数据工程执行时，使用数据工程对象 `$.stop()` 等相关方法会触发该事件。
+
+```javascript
+webpanda.data ({
+    onexecutestop: function (e) {
+        // 当前数据工程对象
+        console.log (this);
+        // 参考 onexecute
+        console.log (e);
+    }
+});
+```
+
+
+## onlaunch
+
+当前数据工程启动之前的事件。
+
+> 数据工程对象执行 `$.page()`、`$.execute()` 、`$.launch()` 方法或者作为页面数据工程时，会触发该事件。
+> 可以使用数据工程对象的 `$.pause()` 、`$.start()`、`$.stop()` 等相关方法，对数据工程的启动状态进行操作。
+
+```javascript
+webpanda.data ({
+    onlaunch: function (e) {
+        // 当前数据工程对象
+        console.log (this);
+        // 事件名称
+        console.log (e.name);
+        // 当前页面执行时间
+        console.log (e.runtime);
+        // 是一个函数, 阻止事件冒泡, 后面未执行的事件回调函数不再执行
+        console.log (e.stopPropagation);
+
+        // 数据工程对象执行的自定义参数
+        // 如：this.$.launch ({id:1,n:2}); 这里的 {id:1,n:2} 就是 e.argument 
+        console.log (e.argument);
+
+        // 全局暂停执行
+        this.$.pause ();
+        // 只暂停启动
+        e.pause ();
+
+        // 全局开始执行
+        this.$.start ();
+        // 只开始启动
+        e.start ();
+
+        // 全局停止执行
+        this.$.stop ();
+        // 只停止启动
+        e.stop ();
+    },
+
+});
+```
+
+## onlaunched
+
+当前数据工程完成启动的事件。
+
+> 数据工程对象执行 `$.page()`、`$.execute()`、`$.launch()` 方法或者作为页面数据工程时，会触发该事件。  
+> 特别注意：在数据工程启动时，当数据工程对象的 `$.stop()` 等相关方法使用后，该事件不会被执行。
+
+```javascript
+webpanda.data ({
+    onlaunched: function (e) {
+        // 当前数据工程对象
+        console.log (this);
+        // 参考 onlaunch
+        console.log (e);
+    },
+
+});
+```
+
+
+## onlaunchstart
+
+当前数据工程开始启动的事件。
+
+> 在数据工程启动时，使用数据工程对象 `$.start()` 等相关方法会触发该事件。
+
+```javascript
+webpanda.data ({
+    onlaunchstart: function (e) {
+        // 当前数据工程对象
+        console.log (this);
+        // 参考 onlaunch
+        console.log (e);
+    }
+});
+```
+
+## onlaunchpause
+
+当前数据工程暂停启动的事件。
+
+> 在数据工程启动时，使用数据工程对象 `$.pause()` 等相关方法会触发该事件。
+
+```javascript
+webpanda.data ({
+    onlaunchpause: function (e) {
+        // 当前数据工程对象
+        console.log (this);
+        // 参考 onlaunch
+        console.log (e);
+    }
+});
+```
+
+## onlaunchstop
+
+
+当前数据工程停止启动的事件。
+
+> 在数据工程启动时，使用数据工程对象 `$.stop()` 等相关方法会触发该事件。
+
+```javascript
+webpanda.data ({
+    onlaunchstop: function (e) {
+        // 当前数据工程对象
+        console.log (this);
+        // 参考 onlaunch
+        console.log (e);
+    }
+});
+```
+
+## onrender
+
+当前数据工程渲染之前的事件。
+
+> 数据工程对象执行 `$.page()`、`$.execute()` 、`$.launch()`、`$.render()` 方法或者作为页面数据工程时，会触发该事件。
+> 可以使用数据工程对象的 `$.pause()` 、`$.start()`、`$.stop()` 等相关方法，对数据工程的渲染状态进行操作。
+
+```javascript
+webpanda.data ({
+    onrender: function (e) {
+        // 当前数据工程对象
+        console.log (this);
+        // 事件名称
+        console.log (e.name);
+        // 当前页面执行时间
+        console.log (e.runtime);
+        // 是一个函数, 阻止事件冒泡, 后面未执行的事件回调函数不再执行
+        console.log (e.stopPropagation);
+
+        // 数据工程对象执行的自定义参数
+        // 如：this.$.render ({id:1,n:2}); 这里的 {id:1,n:2} 就是 e.argument 
+        console.log (e.argument);
+
+        // 全局暂停执行
+        this.$.pause ();
+        // 只暂停渲染
+        e.pause ();
+
+        // 全局开始执行
+        this.$.start ();
+        // 只开始渲染
+        e.start ();
+
+        // 全局停止执行
+        this.$.stop ();
+        // 只停止渲染
+        e.stop ();
+    },
+
+});
+```
+
+## onrendered
+
+当前数据工程完成渲染的事件。
+
+> 数据工程对象执行 `$.page()`、`$.execute()` 、`$.launch()`、`$.render()` 方法或者作为页面数据工程时，会触发该事件。 
+> 特别注意：在数据工程渲染时，当数据工程对象的 `$.stop()` 等相关方法使用后，该事件不会被执行。
+
+```javascript
+webpanda.data ({
+    onrendered: function (e) {
+        // 当前数据工程对象
+        console.log (this);
+        // 参考 onrender
+        console.log (e);
+    },
+
+});
+```
+
+## onrenderstart
+
+当前数据工程开始渲染的事件。
+
+> 在数据工程渲染时，使用数据工程对象 `$.start()` 等相关方法会触发该事件。
+
+```javascript
+webpanda.data ({
+    onrenderstart: function (e) {
+        // 当前数据工程对象
+        console.log (this);
+        // 参考 onrender
+        console.log (e);
+    }
+});
+```
+
+## onrenderpause
+
+当前数据工程暂停渲染的事件。
+
+> 在数据工程渲染时，使用数据工程对象 `$.pause()` 等相关方法会触发该事件。
+
+```javascript
+webpanda.data ({
+    onrenderpause: function (e) {
+        // 当前数据工程对象
+        console.log (this);
+        // 参考 onrender
+        console.log (e);
+    }
+});
+```
+
+## onrenderstop
+
+当前数据工程停止渲染的事件。
+
+> 在数据工程渲染时，使用数据工程对象 `$.stop()` 等相关方法会触发该事件。
+
+```javascript
+webpanda.data ({
+    onrenderstop: function (e) {
+        // 当前数据工程对象
+        console.log (this);
+        // 参考 onrender
+        console.log (e);
+    }
+});
+```
+
+## onrenderobserver
+
+当前数据工程的观察者触发事件。
+
+> 用于编译对象渲染时所设置的 `onobserver` 方法，渲染数据响应式更新时就会触发该事件。
+
+```javascript
+webpanda.data ({
+    onrenderobserver: function (e) {
+        // 当前数据工程对象
+        console.log (this);
+        // 更多参考 onrender
+        console.log (e);
+
+        // 触发目标：观察者相关数据
+        // {publisher: ..., virtualNode: ...}
+        console.log (e.target);
+    }
+});
+```
+
+
+## 原生事件
+
+支持添加原生的 window、document 事件，会根据如下规则：
+
+> 1.如果指定window 或 document 的事件，则以 ondocument* 或 onwindow* 前缀开头。  
+> 2.如果不指定前缀，window 支持的事件，优先绑定到 window，只有 window 不支持而 document 支持的事件，则绑定到 document 。  
+> 3.事件名称都是小写。
+
+
+```javascript
+webpanda.data ({
+
+    /**
+     * 在 window、document 中，JS 原生的双击事件是 ondblclick
+     * 在这里就是 "ondblclick" 命名规则, 注意大小写
+     * 如果不指定前缀，window 支持的事件，优先绑定到 window
+     * 所以这里等价于 window.ondblclick 
+     */
+    ondblclick: function (e) {
+        // 当前数据工程对象
+        console.log (this);
+        // 是一个函数, 阻止事件冒泡, 后面未执行的事件回调函数不再执行
+        console.log (e.stopPropagation);
+        // js原生的事件对象参数
+        console.log (e);
+    },
+
+    /**
+     * 指定 document 事件，则以 ondocument* 前缀开头
+     * 所以这里等价于 document.ondblclick
+     */
+    ondocumentdblclick: function (e) {
+        // 当前数据工程对象
+        console.log (this);
+        // 是一个函数, 阻止事件冒泡, 后面未执行的事件回调函数不再执行
+        console.log (e.stopPropagation);
+        // js原生的事件对象参数
+        console.log (e);
+    },
+    
+    /**
+     * 指定 window 事件，则以 onwindow* 前缀开头
+     * 所以这里等价于 window.onclick
+     */
+    onwindowclick: function (e) {
+        // ...
+    }
+});
+```
 
 # 数据工程对象
 
@@ -1522,6 +2207,41 @@ $.template('vvvv', {index: 1}).render();
 ```
 
 ## 页面数据工程
+
+在当前页面中，指定使用 `page()` 方法执行的数据工程信息，被称之为页面数据工程。
+
+页面数据工程默认情况下启用自己所有的事件为局部事件，并且会根据其筛选器进行渲染。
+
+生命周期执行顺序如下：
+
+```shell
+onexecute -> onlaunch -> onrender -> onrendered -> onlaunched -> onlaunched -> onexecuted
+```
+
+
+## 局部数据工程
+
+
+在当前页面中，某个数据工程进行了局部渲染，或者使用了局部的事件，这些操作的数据工程被称之为局部数据工程。
+
+
+## 全局数据工程
+
+在当前页面中，某个数据工程进行了全局渲染，或者使用了全局的事件，这些操作的数据工程被称之为全局数据工程。
+
+
+## 单例模式
+
+webpand.js 是面向单例模式编程的。每个数据工程都是单例的，是唯一性的。
+
+> 特别注意，在同一个页面中，一个数据工程只会被渲染显示一处，无法多处同时渲染显示的。  
+> 如果想要一个页面多处渲染，需要对数据工程进行拷贝操作，也就是克隆一个新的数据工程。
+
+
+## 全局数据流
+
+正因为数据工程是单例的，所以每个页面都能全局通用，每个数据工程可以相互挂载，状态都是共享的，这样就实现了全局数据流。
+
 
 
 
