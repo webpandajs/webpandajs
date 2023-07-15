@@ -69,29 +69,6 @@ git clone git@github.com:webpandajs/webpandajs.git
 
 
 
-## 多语言
-
-目前 webpanda.js 的默认文案语言是中文简体，可以引入下面的语言方案：
-
-```html
-<!-- 英语 -->
-<script src="/library/webpanda/language/en_US.js"></script>
-<!-- 中文简体 -->
-<script src="/library/webpanda/language/zh_CN.js"></script>
-<!-- 中文繁体 -->
-<script src="/library/webpanda/language/zh_HK.js"></script>
-```
-
-也可以自定义语言方案：
-
-```javascript
-webpanda.language ({
-    // ......
-});
-```
-
-
-
 ## vscode 安装 Live Server 扩展, 搭建本地开发环境
 
 在开发环境中，我们如果使用 vscode 编辑器，需要一个服务器环境。这里推荐 `Live Server` 扩展。
@@ -245,6 +222,564 @@ module.exports = {
 ```
 
 
+# webpanda 对象
+
+
+## run
+
+运行框架，会路由事件。
+
+> 建议是放在基础配置设置之后执行。
+
+```javascript
+// 运行
+webpanda.run ();
+
+// 获取框架运行状态
+console.log (webpanda.run.status());
+```
+
+
+## page
+
+页面操作相关。
+
+> 一般是在 `webpanda.run()` 执行之后再执行。
+
+```javascript
+var setting = {
+    // 数据工程名称
+    name: 'test',
+    // 数据工程克隆名称
+    clone: null,
+    // 数据工程文件路径
+    src: '/src/page/test.js',
+    // 参数
+    argument: {
+        // ...
+    }
+};
+// 执行页面
+webpanda.page (setting);
+
+// 获取当前页面的开始执行时间
+console.log (webpanda.page.runtime());
+// 页面是否第一次加载的状态
+console.log (webpanda.page.firstStatus());
+// 当前页面的数据工程对象
+console.log (webpanda.page.data());
+// 当前页面的URL对象
+console.log (webpanda.page.url());
+```
+
+
+
+## env
+
+自定义环境变量：
+
+```javascript
+webpanda.env = {
+    // ...
+    debug: true,
+    demo: '...',
+};
+
+// 可以全局使用: 主要用于一些规范的自定义配置信息
+console.log (webpanda.env.debug);
+```
+
+## config
+
+框架基础配置：
+
+```javascript
+webpanda.config ({
+
+    /**
+     * 引入包含配置
+     * @param {function({resolve:Function,reject:Function})} e ({resolve(结果) 成功执行, reject(错误信息) 失败时执行}) 
+     */
+    include: function (e) {
+        // ...
+    },
+    // 路由设置
+    router: {
+        // 模式: hash|history
+        mode: 'hash',
+        // 监听器的设置: true|false
+        listener: true,
+        // 是否启用路由页面事件监听: true|false
+        pageEvent: true,
+    },
+    // 浏览记录配置
+    history: {
+        // 浏览记录中的页面上限(记录最大值)
+        pageMaximum: 10,
+        // 浏览记录中的步数上限(记录最大值)
+        stepMaximum: 10,
+    },
+});
+```
+
+## status
+
+获取框架的状态:
+
+```javascript
+webpanda.status();
+```
+
+## language
+
+框架的语言设置。
+
+目前 webpanda.js 的默认文案语言是中文简体，可以引入下面的语言方案：
+
+```html
+<!-- 英语 -->
+<script src="/library/webpanda/language/en_US.js"></script>
+<!-- 中文简体 -->
+<script src="/library/webpanda/language/zh_CN.js"></script>
+<!-- 中文繁体 -->
+<script src="/library/webpanda/language/zh_HK.js"></script>
+```
+
+也可以自定义语言方案：
+
+```javascript
+webpanda.language ({
+    // ......
+});
+```
+
+输出语言字符串：
+
+```javascript
+// 自定义语言
+webpanda.language ({
+    'ERROR': '错误信息',
+});
+// 渲染语言
+webpanda.language.target ('ERROR');
+```
+
+
+## compiler
+
+传入模板字符串及配置信息进行模板编译，返回一个编译对象。
+
+```javascript
+var compiler = webpanda.compiler ({
+    // 模板字符串
+    template: '...',
+    // 父级编译对象
+    parent: null,
+    // 引用信息，用于调试标记
+    reference: '...',
+    // 是否启用观察者的开关，默认true启用，false禁用
+    observerSwitch: true,
+    // 是否启用渲染的开关, 默认为true启用，false禁用
+    renderSwitch: true,
+    // 是否解析模板语法命令的开关, 默认为true启用，false禁用
+    commandSwitch: true,
+});
+
+// 状态，为true表示存在渲染节点，为false表示未渲染或者已清理、重新解析模板
+console.log (compiler.renderStatus);
+// 最后一次渲染的筛选器对象
+console.log (compiler.selector);
+// 检测是否为编译对象: 判断变量的对象类型是否为 webpanda.compiler 创建的实例对象。如果是返回 true，否则返回 false 。
+console.log (webpanda.compiler.isInstanceOf (compiler));
+
+// 解析
+compiler.parse ();
+// 可以传一个父级虚拟节点
+// compiler.parse (parentVirtualNode);
+
+// 解除之前的解析
+compiler.unparse ();
+
+// 渲染
+compiler.render ({
+    // 渲染数据，必须是一个对象
+    data: {
+        //...
+    },
+    // 筛选器
+    selector: 'body'
+    // 自定义预编译声明事件: .call(VirtualNode, statement, event)
+    onprecompilestatement: function (statement, event) {
+        // ...
+    },
+    // 观察者事件: .call(VirtualNode, Publisher)
+    onobserver: function (Publisher) {
+        // ...
+    },
+    // 渲染前置事件: .call(VirtualNode)
+    onbefore: function () {
+        // ...
+    },
+    // 渲染h后置事件: .call(VirtualNode)
+    onafter: function () {
+        // ...
+    },
+});
+
+// 清理渲染
+compiler.clear ();
+
+// 获取渲染后的HTML内容
+console.log (compiler.html());
+
+// 获取渲染后的text内容
+console.log (compiler.text());
+```
+
+## observer
+
+观察者相关操作。
+
+```javascript
+
+// 给数据设置观察者
+webpanda.observer ({
+    // 必须是一个对象
+    // ...
+});
+// 给数据设置禁止观察者: 会删除已设置的观察者，并且数据之后将无法设置观察者
+webpanda.observer.disable ({
+    // 必须是一个对象
+    // ...
+});
+
+// 判断是否有观察者
+console.log (webpanda.observer.has());
+// 判断是否有禁止观察者
+console.log (webpanda.observer.hasDisable());
+
+// 删除观察者
+webpanda.observer.remove();
+// 取消禁止观察者
+webpanda.observer.removeDisable();
+
+// 忽略观察者的订阅、发布的操作
+var result = webpanda.observer.disable (function () {
+    // 必须是一个函数
+    return //...
+});
+
+// 忽略观察者的订阅
+var result = webpanda.observer.disableSubscribe (function () {
+    // 必须是一个函数
+    return //...
+});
+
+// 忽略观察者的发布
+var result = webpanda.observer.disablePublish (function () {
+    // 必须是一个函数
+    return //...
+});
+```
+
+## url
+
+传入一个网络协议地址进行解析。
+
+```javascript
+// http 协议地址
+var url = webpanda.url("https://example.com:8080/?a=index&t=article&bbbb=default");
+var url2 = webpanda.url("http://username:password@hostname/path?arg=value#hash");
+// file 协议地址
+var url3 = webpanda.url("file:///C:/Users/example/AppData/Local/Temp/wangdan.jpg?a=index");
+
+// 添加事件
+var url = webpanda.url("https://example.com:8080/npm/vexflow@4.0.3/build/test.js", {
+    toString: function (url, options) {
+        // this 是当前对象
+        // options 是构建选项值
+        // @符号被转义成%40, 这里进行恢复处理
+        return url.replace (/\%40/g,'@');
+    }
+});
+
+// 判断变量的对象类型是否为 webpanda.url 创建的实例对象。如果是返回 true，否则返回 false 。
+console.log (webpanda.url.isInstanceOf (url));
+
+
+// 合并URL地址或者url对象
+var url = webpanda.url("https://example.com:8080?a=index");
+url.merge("/path/Test/");
+url.toString();// "https://example.com:8080/path/Test/?a=index"
+
+
+// 把 url 对象换为 URL 字符串(构造 URL)
+// 构造地址字符串，选项值来自于 webpanda.url.option 属性。
+var url = webpanda.url("https://example.com:8080/path/Test/?a=index&t=article&bbbb=default");
+// 选项为空默认 webpanda.url.option.all, 也就是获取完整路由
+url.toString ();// "https://example.com:8080/path/Test/?a=index&t=article&bbbb=default"
+var opt =  webpanda.url.option;
+// 只获取域名、协议
+url.toString (opt.domain | opt.protocol);// "https://example.com"
+// 除了路径，都要获取
+url.toString (opt.all & ~ opt.path);// "https://example.com:8080/?a=index&t=article&bbbb=default"
+// 除了Query，都要获取。
+url.toString (opt.all & ~ opt.query);// "https://example.com:8080/path/Test/"
+
+
+/**
+ * 选项属性
+ */
+
+// 构造 URL 时，获取协议, 值示例 "http://"、"file://"
+console.log (webpanda.url.option.PROTOCOL);
+// 构造 URL 时，获取账户信息, 值示例 "username:password@"
+console.log (webpanda.url.option.ACCOUNT);
+// 构造 URL 时，获取域名端口, 值示例 "example.com"
+console.log (webpanda.url.option.DOMAIN);
+// 构造 URL 时，获取端口, 值示例 8080
+console.log (webpanda.url.option.PORT);
+// 构造 URL 时，获取路径, 值示例 "/index.html"
+console.log (webpanda.url.option.PATH);
+// 构造 URL 时，获取 query（键值对）, 值示例 "?a=index&t=article"
+console.log (webpanda.url.option.QUERY);
+// 构造 URL 时，获取锚点中路径, 值示例 "#test/index"
+console.log (webpanda.url.option.HASH_PATH);
+// 构造 URL 时，获取锚点中 query（键值对）, 值示例 "#?a=index&b=test"
+console.log (webpanda.url.option.HASH_QUERY);
+// 构造 URL 时，获取完整锚点, 值示例 "#test/index?a=index&b=test"
+console.log (webpanda.url.option.HASH);
+// 构造 URL 时，主机信息（账号密码、域名+端口）, 值示例 "username:password@example.com:8080" 
+console.log (webpanda.url.option.HOST);
+// 构造 URL 时，获取完整路由。默认值, 值示例 "http://example.com:8080/index.html?a=index&t=article#test/index?a=index&b=test"
+console.log (webpanda.url.option.ALL);
+```
+
+属性详解：
+
+```shell
+| 名称           | 值示例                                    | 描述                                                         |
+| -------------- | ----------------------------------------- | ------------------------------------------------------------ |
+| protocol       | "http"                                    | 协议前缀                                                     |
+| user           | "user"                                    | 账户名                                                       |
+| password       | "password"                                | 账户密码                                                     |
+| domain         | "example.com"                            | 域名名称                                                     |
+| port           | 8080                                      | 端口号                                                       |
+| path           | Array ( [0] => index.html)                | 路径                                                         |
+| query          | Object ([a] => index [t] => article )     | 键值对                                                       |
+| hashPath       | Array ( [0] => index)                     | 锚点路径                                                     |
+| hashQuery      | Object ([a] => index [t] => article )     | 锚点键值对                                                   |
+| hashStatus     | false                                     | 锚点状态，默认 false。如果锚点存在， "#/" 或者是 "#" 那么 hashStatus 为 true，绑定时则保留为#，为 false 则清理 # |
+| fileStatus     | false                                     | 文件模式状态，默认 false 。如果是 true 文件模式，也就是说 path 最后不加 "/" 斜杠，否则要加上。只有在 path 存在参数时有效 |
+| absoluteStatus | false                                     | 是否是绝对路径，默认 false。如果是 true 也就是说 path 前面有 '/'斜杠，需要加上。只有在 protocol、account、domain、port 选项所绑定数据为空时有效 |
+| onbuild        | Function (url 构建后的链接, options 选项) | 构建时触发事件。用于捕获构建后的链接，进行额外的自定义处理。返回值必须是一个字符串，也是最终构建的链接信息。 |
+```
+
+
+## timer
+
+计时器相关。
+
+> 在单页应用模式下，并不是我怀疑定时器、超时器的ID池存在不够用、爆库的风险，而是可以有效控制全局与局部的状态。所以建议使用计时器统一管理。  
+> 不是全局的计时器被认作为页面计时器，就是在当前页面有效，只要页面更新就会自动取消。
+
+```javascript
+// 返回一个计时器对象:
+// global 是否全局有效，如果为true表示全局，页面更新不会被清理，否则页面更新就会被清理。默认为 false
+// target 触发时间。默认为 0
+// limit 执行次数限制，如果小于1，则表示无限循环。默认为 -1
+// webpanda.timer (callback, global, target, limit)
+var timer = webpanda.timer (function () {
+    // ...
+});
+
+// 判断变量的对象类型是否为 webpanda.timer 创建的实例对象。如果是返回 true，否则返回 false 。
+console.log (webpanda.timer.isInstanceOf (timer));
+
+// 停止
+timer.stop ();
+
+// 开始
+timer.start ();
+// 可以传一个布尔值参数，如果为true，表示重置，也就是已经执行的次数归零
+timer.start (true);
+
+// 查询是否存在执行队列中。如果该计时器已经被停止，则返回 false 。
+console.log (timer.status ());
+
+
+/**
+ * 超时器
+ */
+// 第一种写法
+webpanda.timer (function () {
+    console.log ("3秒的超时器");
+}, false, 3000, 1).start ();
+
+// 第二种写法
+webpanda.timer (function () {
+    console.log ("3秒的超时器");
+}).timeout (3000).start ();
+
+
+/**
+ * 定时器
+ */
+// 第一种写法
+webpanda.timer (function () {
+    console.log ("3秒的定时器");
+}, false, 3000).start ();// 第三个参数默认为 -1
+
+// 第二种写法
+webpanda.timer (function () {
+    console.log ("3秒的定时器");
+}).interval (3000).start ();
+```
+
+属性:
+
+```shell
+| 名称      | 类型     | 描述                                                         |
+| --------- | -------- | ------------------------------------------------------------ |
+| callback  | Function | 回调函数                                                     |
+| limit     | Number   | 可执行的总次数、限制执行次数。如果为0表示不限制              |
+| executed  | Number   | 已经执行次数                                                 |
+| index     | Number   | 索引，随着页面更新索引有可能会自动改变                       |
+| runtime   | Number   | 当前页面的运行时间(页面版本号)                               |
+| origin    | Number   | 开端的毫秒时间戳                                             |
+| target    | Number   | 目标（触发）的毫秒时间戳                                     |
+| global    | Boolean  | 是否全局有效，true表示全局，false表示属于当前页面计时器      |
+| executing | Boolean  | 执行状态，true表示执行中，定时器必须是前面存在执行完毕之后才会执行下一次 |
+```
+
+
+
+
+## queue
+
+框架队列执行。
+
+```javascript
+webpanda.queue(function() {
+    console.log (123);
+});
+console.log (456);
+
+// 456
+// 123
+```
+
+
+## include
+
+包含文件资源相关。
+
+```javascript
+// 包含一个字符串路径
+webpanda.include ('/library/test.css');
+// 支持对象
+webpanda.include ({
+    // 资源路径, 可以是一个webpanda.url创建的对象
+    src: '/library/test.css',
+    // 是否异步, 默认true(异步)
+    async: true,
+    // 文件类型, 不设置默认获取资源扩展后缀，无扩展后缀的默认为 text
+    type: 'text',
+    // 回调函数, 无论成功还是失败都会执行
+    onfinally: function (include) {
+        console.log (this);// 框架对象
+        console.log (include);// include对象
+    },
+    // 成功回调函数
+    onresolve: function (include) {
+        console.log (this);// 框架对象
+        console.log (include);// include对象
+    },
+    // 失败回调函数
+    onreject: function (include) {
+        console.log (this);// 框架对象
+        console.log (include);// include对象
+    },
+});
+
+// 支持多个
+webpanda.include ([
+    {
+        src: webpanda.url('/library/test.css'),
+        async: false,
+    },
+    '/library/test2.js',
+    webpanda.url('/library/test3.js'),
+]);
+
+// 获取所有包含、引入资源
+console.log (webpanda.include.getAll ());
+```
+
+
+
+## data
+
+数据工程相关。
+
+```javascript
+// 详见数据工程定义
+var data = webpanda.data({
+    // ...
+});
+
+// 判断变量的对象类型是否为 webpanda.data 创建的实例对象。如果是返回 true，否则返回 false 。
+console.log (webpanda.data.isInstanceOf (data));
+
+// 获取所有数据工程
+console.log (webpanda.data.getAll ());
+// 根据工程名称获取工程对象
+console.log (webpanda.data.get ('test'));
+// 根据工程索引获取工程对象
+console.log (webpanda.data.getByIndex (1));
+
+/**
+ * 根据工程名称获取工程准备状态值
+ * -1 表示不存在这个名称的工程，或者这个工程还没有载入进来
+ * 0  表示工程未准备
+ * 1  表示工程准备完成
+ * 2  表示工程准备中
+ * 3  表示工程初始化中
+ */
+console.log (webpanda.data.getReadyState ('test'));
+
+// 根据工程名称设置准备就绪的工程钩子
+webpanda.data.ready ('component://animation/progress', {
+    onresolve: function (e) {
+        // 成功时
+        console.log (this);// 当前数据工程对象
+    },
+    onreject: function (e) {
+        // 超时回调函数
+    },
+    global: true,// 设为全局有效，默认false非全局(页面刷新会被取消)
+    timeout: 5000,// 5秒后超时
+});
+```
+
+
+## history
+
+浏览记录相关操作。
+
+
+
+
+
+
+## mount
+
+将自定义变量挂载到框架原型上。
+
+
+
+
+
 # 概念
 
 
@@ -289,11 +824,6 @@ this.$.event ();
 
 
 # 模板语法
-
-
-
-# 模块功能
-
 
 
 
