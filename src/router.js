@@ -11,7 +11,7 @@ webpanda.mount.Router = webpanda.data ({
      * @param {*} e 
      */
     onpage: function (e) {
-
+        
         /**
          * 这里面根据路由规则自行判断并执行页面操作
          */

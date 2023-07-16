@@ -723,7 +723,7 @@ console.log (webpanda.include.getAll ());
 数据工程相关。
 
 ```javascript
-// 详见数据工程定义
+// 详见：数据工程定义
 var data = webpanda.data({
     // ...
 });
@@ -731,11 +731,11 @@ var data = webpanda.data({
 // 判断变量的对象类型是否为 webpanda.data 创建的实例对象。如果是返回 true，否则返回 false 。
 console.log (webpanda.data.isInstanceOf (data));
 
-// 获取所有数据工程
+// 获取所有数据工程对象
 console.log (webpanda.data.getAll ());
-// 根据工程名称获取工程对象
+// 根据名称获取数据工程对象
 console.log (webpanda.data.get ('test'));
-// 根据工程索引获取工程对象
+// 根据索引获取数据工程对象
 console.log (webpanda.data.getByIndex (1));
 
 /**
@@ -978,30 +978,6 @@ var test = "&lt;span&gt;这是测试&lt;/span&gt;";
 var code = webpanda.HTMLDecode (test);
 console.log (code);// <span>这是测试</span>
 ```
-
-
-
-# 概念
-
-
-## 局部数据工程
-
-局部渲染、局部事件使用
-
-## 全局数据工程
-
-全局渲染、全局事件使用
-
-
-## 单例模式
-
-因为是单例模式，所以数据工程多次渲染再同一个页面上需要进行拷贝。
-
-## 全局数据流
-
-
-
-
 
 
 # 数据工程定义
@@ -1477,6 +1453,45 @@ webpanda.data ({
 
 数据工程的构造。
 
+构造的属性会添加观察者，用于模板渲染的响应式数据操作。
+
+> 特别注意，不要在构造数据中赋值为其他的数据工程。因为这样在删除该数据工程的时候，会把其他的数据工程数据观察者信息删除。
+
+```javascript
+// Object 定义的方式
+webpanda.data ({
+    construct: {
+        test: { 
+            // ...
+        },
+        testFunc: function() {
+            // 函数体内的this就是当前数据工程对象
+            console.log (this);
+        };
+    },
+});
+
+// Function 定义的方式
+webpanda.data ({
+    construct: function () {
+        // 当前的数据工程对象
+        console.log (webpanda.data.this);
+        
+        // 可以作为私有内部变量
+        var prototype = webpanda.data.this.$.prototype;
+
+        // 子属性禁用观察者
+        this.unobtest = webpanda.observer.disable ({});
+
+        this.test = "这是测试";
+        this.message = "你好，webpanda.js!";
+        this.testFunc = function() {
+            // 函数体内的this就是当前数据工程对象
+            console.log (this);
+        };
+    },
+});
+```
 
 
 
@@ -1484,61 +1499,2139 @@ webpanda.data ({
 
 数据工程的原型。
 
+原型定义与构造类似，但与构造不同的是，构造属性不会添加观察者，用于非响应式的操作。
+
+```javascript
+// Object 定义的方式
+webpanda.data ({
+    prototype: {
+        test: { 
+            // ...
+        },
+        testFunc: function () {
+            // 函数体内的this就是当前数据工程对象
+            console.log (this);
+        };
+    },
+});
+
+// Function 定义的方式
+webpanda.data ({
+    prototype: function () {
+        // 当前的数据工程对象
+        console.log (webpanda.data.this);
+        
+        // 可以作为私有内部变量
+        var prototype = webpanda.data.this.$.prototype;
+
+        this.test = "这是测试";
+        this.message = "你好，webpanda.js!";
+        this.testFunc = function () {
+            // 函数体内的this就是当前数据工程对象
+            console.log (this);
+        };
+    },
+});
+```
+
+
 
 
 ## onpage
 
+页面开始执行的事件。
+
+该事件必须通过使用 `e.page()` 回调函数指定页面数据工程信息，如果不执行页面将停止加载。
+
+```javascript
+webpanda.data ({
+    onpage: function (e) {
+        // 当前数据工程对象
+        console.log (this);
+        // 事件名称
+        console.log (e.name);
+        // 当前页面执行时间
+        console.log (e.runtime);
+        // 是一个函数, 阻止事件冒泡, 后面未执行的事件回调函数不再执行
+        console.log (e.stopPropagation);
+        // webpanda.url 对象
+        console.log (e.url);
+
+        /**
+         * 路由设置信息
+         * {
+         *      // 数据工程名称
+         *      name: 'test',
+         *      // 数据工程克隆名称
+         *      clone: null,
+         *      // 数据工程文件路径
+         *      src: '/src/page/test.js',
+         *      // 参数
+         *      argument: {
+         *          // ...
+         *      }
+         * }
+         */
+        console.log (e.setting);
+        
+
+        // 如已经设置了，直接执行：可能来自 工程 page 方法的执行
+        if (typeof this.setting != 'undefined') {
+            e.page (e.setting);
+        } 
+        // 其他自定义、自动化页面路由
+        else if (typeof e.url.path[1] != 'undefined' && e.url.path[1] == 'test') {
+            e.page ({
+                name: "test",// 工程名称
+                src: "/src/test.js",// 工程源文件
+            });
+        }
+    },
+
+});
+```
+
 
 ## onpagenotfound
+
+页面不存在的事件。
+
+
+```javascript
+webpanda.data ({
+    onpagenotfound: function (e) {
+        // 当前数据工程对象
+        console.log (this);
+        // 事件名称
+        console.log (e.name);
+        // 当前页面执行时间
+        console.log (e.runtime);
+        // 是一个函数, 阻止事件冒泡, 后面未执行的事件回调函数不再执行
+        console.log (e.stopPropagation);
+        // webpanda.url 对象
+        console.log (e.url);
+    },
+});
+```
 
 
 ## onpageprogress
 
+页面生命周期进度的事件。
+
+```javascript
+webpanda.data ({
+    onpageprogress: function (e) {
+        // 当前数据工程对象
+        console.log (this);
+        // 事件名称
+        console.log (e.name);
+        // 当前页面执行时间
+        console.log (e.runtime);
+        // 是一个函数, 阻止事件冒泡, 后面未执行的事件回调函数不再执行
+        console.log (e.stopPropagation);
+        // webpanda.url 对象
+        console.log (e.url);
+
+        // 总进度
+        console.log (e.total);
+        // 已加载进度
+        console.log (e.loaded);
+        // 已加载进度百分比
+        console.log (e.percent);
+    },
+
+});
+```
+
 
 ## onpaged
 
+页面最后执行的事件。
+
+```javascript
+webpanda.data ({
+    onpaged: function (e) {
+        // 当前数据工程对象
+        console.log (this);
+        // 事件名称
+        console.log (e.name);
+        // 当前页面执行时间
+        console.log (e.runtime);
+        // 是一个函数, 阻止事件冒泡, 后面未执行的事件回调函数不再执行
+        console.log (e.stopPropagation);
+        // webpanda.url 对象
+        console.log (e.url);
+    },
+});
+```
+
+
 ## onpageurlchange
+
+页面路由改变跳转页面的事件。
+
+```javascript
+webpanda.data ({
+    onpageurlchange: function (e) {
+        // 当前数据工程对象
+        console.log (this);
+        // 事件名称
+        console.log (e.name);
+        // 当前页面执行时间
+        console.log (e.runtime);
+        // 是一个函数, 阻止事件冒泡, 后面未执行的事件回调函数不再执行
+        console.log (e.stopPropagation);
+        // webpanda.url 对象
+        console.log (e.url);
+
+        // e.accept 与 e.ignore 方法使用
+        if (confirm ("你确定要跳转页面么?")) {
+            e.accept ();// 跳转 
+        } else {
+            e.ignore ();// 禁止跳转 
+        }
+        
+    },
+});
+```
+
 
 
 ## onpagedestroy
 
+页面离开销毁的事件。
+
+```javascript
+webpanda.data ({
+    onpagedestroy: function (e) {
+        // 当前数据工程对象
+        console.log (this);
+        // 事件名称
+        console.log (e.name);
+        // 当前页面执行时间
+        console.log (e.runtime);
+        // 是一个函数, 阻止事件冒泡, 后面未执行的事件回调函数不再执行
+        console.log (e.stopPropagation);
+        // webpanda.url 对象
+        console.log (e.url);
+
+        /**
+         * 当前路由的设置信息
+         * 注意，不是销毁的页面路由信息，而是新的、将要跳转的新页面的路由设置信息
+         * {
+         *      // 数据工程名称
+         *      name: 'test',
+         *      // 数据工程克隆名称
+         *      clone: null,
+         *      // 数据工程文件路径
+         *      src: '/src/page/test.js',
+         *      // 参数
+         *      argument: {
+         *          // ...
+         *      }
+         * }
+         */
+        console.log (e.setting);
+    },
+});
+```
+
 
 ## onurlchange
+
+当URL发送改变时，触发该事件。
+
+> 注意，`onpageurlchange()` 事件触发时（也就是页面跳转时），该事件不会被触发。
+
+```javascript
+webpanda.data ({
+    onurlchange: function (e) {
+        // 当前数据工程对象
+        console.log (this);
+        // 事件名称
+        console.log (e.name);
+        // 当前页面执行时间
+        console.log (e.runtime);
+        // 是一个函数, 阻止事件冒泡, 后面未执行的事件回调函数不再执行
+        console.log (e.stopPropagation);
+        // webpanda.url 对象
+        console.log (e.url);
+
+    },
+
+});
+```
 
 
 ## onready
 
+当前数据工程准备完成的事件。
+
+```javascript
+webpanda.data ({
+    onready: function (e) {
+        // 当前数据工程对象
+        console.log (this);
+        // 事件名称
+        console.log (e.name);
+        // 当前页面执行时间
+        console.log (e.runtime);
+        // 是一个函数, 阻止事件冒泡, 后面未执行的事件回调函数不再执行
+        console.log (e.stopPropagation);
+
+    },
+
+});
+```
+
 
 ## onexecute
 
+当前数据工程执行之前的事件。
+
+> 数据工程对象执行 `$.page()`、`$.execute()` 方法或者作为页面数据工程时，会触发该事件。
+> 可以使用数据工程对象的 `$.pause()` 、`$.start()`、`$.stop()` 等相关方法，对数据工程的执行状态进行操作。
+
+```javascript
+webpanda.data ({
+    onexecute: function (e) {
+        // 当前数据工程对象
+        console.log (this);
+        // 事件名称
+        console.log (e.name);
+        // 当前页面执行时间
+        console.log (e.runtime);
+        // 是一个函数, 阻止事件冒泡, 后面未执行的事件回调函数不再执行
+        console.log (e.stopPropagation);
+
+        // 数据工程对象执行的自定义参数
+        // 如：this.$.execute ({id:1,n:2}); 这里的 {id:1,n:2} 就是 e.argument 
+        console.log (e.argument);
+
+        // 全局暂停执行
+        this.$.pause ();
+        // 只暂停执行
+        e.pause ();
+
+        // 全局开始执行
+        this.$.start ();
+        // 只开始执行
+        e.start ();
+
+        // 全局停止执行
+        this.$.stop ();
+        // 只停止执行
+        e.stop ();
+    },
+
+});
+```
+
+## onexecuted
+
+当前数据工程完成执行的事件。
+
+> 数据工程对象执行 `$.page()`、`$.execute()` 方法或者作为页面数据工程时，会触发该事件。  
+> 特别注意：在数据工程执行时，当数据工程对象的 `$.stop()` 等相关方法使用后，该事件不会被执行。
 
 
+```javascript
+webpanda.data ({
+    onexecuted: function (e) {
+        // 当前数据工程对象
+        console.log (this);
+        // 参考 onexecute
+        console.log (e);
+    },
+
+});
+```
+
+## onexecutestart
+
+当前数据工程开始执行的事件。
+
+> 在数据工程执行时，使用数据工程对象 `$.start()` 等相关方法会触发该事件。
+
+```javascript
+webpanda.data ({
+    onexecutestart: function (e) {
+        // 当前数据工程对象
+        console.log (this);
+        // 参考 onexecute
+        console.log (e);
+    }
+});
+```
+
+## onexecutepause
+
+当前数据工程暂停执行的事件。
+
+> 在数据工程执行时，使用数据工程对象 `$.pause()` 等相关方法会触发该事件。
+
+```javascript
+webpanda.data ({
+    onexecutepause: function (e) {
+        // 当前数据工程对象
+        console.log (this);
+        // 参考 onexecute
+        console.log (e);
+    }
+});
+```
+
+
+## onexecutestop
+
+当前数据工程停止执行的事件。
+
+> 在数据工程执行时，使用数据工程对象 `$.stop()` 等相关方法会触发该事件。
+
+```javascript
+webpanda.data ({
+    onexecutestop: function (e) {
+        // 当前数据工程对象
+        console.log (this);
+        // 参考 onexecute
+        console.log (e);
+    }
+});
+```
+
+
+## onlaunch
+
+当前数据工程启动之前的事件。
+
+> 数据工程对象执行 `$.page()`、`$.execute()` 、`$.launch()` 方法或者作为页面数据工程时，会触发该事件。
+> 可以使用数据工程对象的 `$.pause()` 、`$.start()`、`$.stop()` 等相关方法，对数据工程的启动状态进行操作。
+
+```javascript
+webpanda.data ({
+    onlaunch: function (e) {
+        // 当前数据工程对象
+        console.log (this);
+        // 事件名称
+        console.log (e.name);
+        // 当前页面执行时间
+        console.log (e.runtime);
+        // 是一个函数, 阻止事件冒泡, 后面未执行的事件回调函数不再执行
+        console.log (e.stopPropagation);
+
+        // 数据工程对象执行的自定义参数
+        // 如：this.$.launch ({id:1,n:2}); 这里的 {id:1,n:2} 就是 e.argument 
+        console.log (e.argument);
+
+        // 全局暂停执行
+        this.$.pause ();
+        // 只暂停启动
+        e.pause ();
+
+        // 全局开始执行
+        this.$.start ();
+        // 只开始启动
+        e.start ();
+
+        // 全局停止执行
+        this.$.stop ();
+        // 只停止启动
+        e.stop ();
+    },
+
+});
+```
+
+## onlaunched
+
+当前数据工程完成启动的事件。
+
+> 数据工程对象执行 `$.page()`、`$.execute()`、`$.launch()` 方法或者作为页面数据工程时，会触发该事件。  
+> 特别注意：在数据工程启动时，当数据工程对象的 `$.stop()` 等相关方法使用后，该事件不会被执行。
+
+```javascript
+webpanda.data ({
+    onlaunched: function (e) {
+        // 当前数据工程对象
+        console.log (this);
+        // 参考 onlaunch
+        console.log (e);
+    },
+
+});
+```
+
+
+## onlaunchstart
+
+当前数据工程开始启动的事件。
+
+> 在数据工程启动时，使用数据工程对象 `$.start()` 等相关方法会触发该事件。
+
+```javascript
+webpanda.data ({
+    onlaunchstart: function (e) {
+        // 当前数据工程对象
+        console.log (this);
+        // 参考 onlaunch
+        console.log (e);
+    }
+});
+```
+
+## onlaunchpause
+
+当前数据工程暂停启动的事件。
+
+> 在数据工程启动时，使用数据工程对象 `$.pause()` 等相关方法会触发该事件。
+
+```javascript
+webpanda.data ({
+    onlaunchpause: function (e) {
+        // 当前数据工程对象
+        console.log (this);
+        // 参考 onlaunch
+        console.log (e);
+    }
+});
+```
+
+## onlaunchstop
+
+
+当前数据工程停止启动的事件。
+
+> 在数据工程启动时，使用数据工程对象 `$.stop()` 等相关方法会触发该事件。
+
+```javascript
+webpanda.data ({
+    onlaunchstop: function (e) {
+        // 当前数据工程对象
+        console.log (this);
+        // 参考 onlaunch
+        console.log (e);
+    }
+});
+```
+
+## onrender
+
+当前数据工程渲染之前的事件。
+
+> 数据工程对象执行 `$.page()`、`$.execute()` 、`$.launch()`、`$.render()` 方法或者作为页面数据工程时，会触发该事件。
+> 可以使用数据工程对象的 `$.pause()` 、`$.start()`、`$.stop()` 等相关方法，对数据工程的渲染状态进行操作。
+
+```javascript
+webpanda.data ({
+    onrender: function (e) {
+        // 当前数据工程对象
+        console.log (this);
+        // 事件名称
+        console.log (e.name);
+        // 当前页面执行时间
+        console.log (e.runtime);
+        // 是一个函数, 阻止事件冒泡, 后面未执行的事件回调函数不再执行
+        console.log (e.stopPropagation);
+
+        // 数据工程对象执行的自定义参数
+        // 如：this.$.render ({id:1,n:2}); 这里的 {id:1,n:2} 就是 e.argument 
+        console.log (e.argument);
+
+        // 全局暂停执行
+        this.$.pause ();
+        // 只暂停渲染
+        e.pause ();
+
+        // 全局开始执行
+        this.$.start ();
+        // 只开始渲染
+        e.start ();
+
+        // 全局停止执行
+        this.$.stop ();
+        // 只停止渲染
+        e.stop ();
+    },
+
+});
+```
+
+## onrendered
+
+当前数据工程完成渲染的事件。
+
+> 数据工程对象执行 `$.page()`、`$.execute()` 、`$.launch()`、`$.render()` 方法或者作为页面数据工程时，会触发该事件。 
+> 特别注意：在数据工程渲染时，当数据工程对象的 `$.stop()` 等相关方法使用后，该事件不会被执行。
+
+```javascript
+webpanda.data ({
+    onrendered: function (e) {
+        // 当前数据工程对象
+        console.log (this);
+        // 参考 onrender
+        console.log (e);
+    },
+
+});
+```
+
+## onrenderstart
+
+当前数据工程开始渲染的事件。
+
+> 在数据工程渲染时，使用数据工程对象 `$.start()` 等相关方法会触发该事件。
+
+```javascript
+webpanda.data ({
+    onrenderstart: function (e) {
+        // 当前数据工程对象
+        console.log (this);
+        // 参考 onrender
+        console.log (e);
+    }
+});
+```
+
+## onrenderpause
+
+当前数据工程暂停渲染的事件。
+
+> 在数据工程渲染时，使用数据工程对象 `$.pause()` 等相关方法会触发该事件。
+
+```javascript
+webpanda.data ({
+    onrenderpause: function (e) {
+        // 当前数据工程对象
+        console.log (this);
+        // 参考 onrender
+        console.log (e);
+    }
+});
+```
+
+## onrenderstop
+
+当前数据工程停止渲染的事件。
+
+> 在数据工程渲染时，使用数据工程对象 `$.stop()` 等相关方法会触发该事件。
+
+```javascript
+webpanda.data ({
+    onrenderstop: function (e) {
+        // 当前数据工程对象
+        console.log (this);
+        // 参考 onrender
+        console.log (e);
+    }
+});
+```
+
+## onrenderobserver
+
+当前数据工程的观察者触发事件。
+
+> 用于编译对象渲染时所设置的 `onobserver` 方法，渲染数据响应式更新时就会触发该事件。
+
+```javascript
+webpanda.data ({
+    onrenderobserver: function (e) {
+        // 当前数据工程对象
+        console.log (this);
+        // 更多参考 onrender
+        console.log (e);
+
+        // 触发目标：观察者相关数据
+        // {publisher: ..., virtualNode: ...}
+        console.log (e.target);
+    }
+});
+```
+
+
+## 原生事件
+
+支持添加原生的 window、document 事件，会根据如下规则：
+
+> 1.如果指定window 或 document 的事件，则以 ondocument* 或 onwindow* 前缀开头。  
+> 2.如果不指定前缀，window 支持的事件，优先绑定到 window，只有 window 不支持而 document 支持的事件，则绑定到 document 。  
+> 3.事件名称都是小写。
+
+
+```javascript
+webpanda.data ({
+
+    /**
+     * 在 window、document 中，JS 原生的双击事件是 ondblclick
+     * 在这里就是 "ondblclick" 命名规则, 注意大小写
+     * 如果不指定前缀，window 支持的事件，优先绑定到 window
+     * 所以这里等价于 window.ondblclick 
+     */
+    ondblclick: function (e) {
+        // 当前数据工程对象
+        console.log (this);
+        // 是一个函数, 阻止事件冒泡, 后面未执行的事件回调函数不再执行
+        console.log (e.stopPropagation);
+        // js原生的事件对象参数
+        console.log (e);
+    },
+
+    /**
+     * 指定 document 事件，则以 ondocument* 前缀开头
+     * 所以这里等价于 document.ondblclick
+     */
+    ondocumentdblclick: function (e) {
+        // 当前数据工程对象
+        console.log (this);
+        // 是一个函数, 阻止事件冒泡, 后面未执行的事件回调函数不再执行
+        console.log (e.stopPropagation);
+        // js原生的事件对象参数
+        console.log (e);
+    },
+    
+    /**
+     * 指定 window 事件，则以 onwindow* 前缀开头
+     * 所以这里等价于 window.onclick
+     */
+    onwindowclick: function (e) {
+        // ...
+    }
+});
+```
 
 # 数据工程对象
 
 
+## name
+
+数据工程对象的名称。
+
 ```javascript
-$.template('vvvv', {index: 1}).render();
+// 根据名称获取数据工程对象
+console.log (webpanda.data.get ('test'));
 ```
 
-## 页面数据工程
+## index
+
+数据工程对象会自动创建一个索引，具备全局唯一，即使相同的工程名称删除后再创建，其索引也不一样。
+
+
+## base
+
+数据工程对象继承的父级信息。
+
+
+## derived
+
+数据工程对象被继承的派生信息。
+
+
+## clone
+
+数据工程对象的克隆。
+
+克隆数据工程与继承数据工程不同。克隆数据工程会以被克隆的数据工程原始定义的结构，创建一个新的数据工程。
+
+> 克隆的新数据工程并没有准备，需要手动去准备。  
+> 克隆时如果未定义数据工程的名称则会自动创建一个全局唯一的名称。  
+
+```javascript
+// 这里示例this为数据工程对象
+
+// 不设置 name 会自动生成一个唯一的工程名称
+console.log (this.$.clone ());
+
+// 克隆一个指定名称的新工程，因为有可能名称重复，所以有可能创建失败：
+var test = this.$.clone ('test');
+if (test) {
+    console.log ("数据工程克隆成功：", test);
+}
+
+// 克隆的新数据工程并没有准备，需要手动去准备
+this.$.clone ().$.ready ();
+```
+
+
+## remove
+
+删除数据工程对象，包括清理已经渲染在页面上的节点等信息。删除后，该数据工程将被移除，包括其父级与派生的关系，注意，但不会删除派生和父级的数据工程对象。
 
 
 
+## ready
+
+准备工程或准备完成执行。
+
+
+
+数据工程定义后会返回还没有准备的数据工程对象，那么可以使用 `$.ready()` 方法进行准备。
+
+> 注意，如果数据工程在准备的时候，其挂载的数据工程也要发起准备操作。  
+> 所以，当前数据工程挂载其他数据工程后，在当前数据工程准备完成后，其他被挂载的数据工程也是准备完成了的。
+
+```javascript
+// 临时定义
+var test = webpanda.data ({
+    name: "test",
+});
+
+// 去准备, 返回准备的状态值
+var readyState = test.$.ready ();
+```
+
+> 在明确工程已经载入定义，但不清楚其是否准备好的情况下，使用 `ready(callback)` 方法是最保险的做法：
+
+```javascript
+// 去准备, 返回准备的状态值
+var readyState = test.ready (function () {
+    // 当工程载入并且准备完毕后，会执行这个回调函数
+    // this 就是这个准备好的工程对象
+    console.log (this);
+});
+```
+
+> 在工程准备时，可能有些同步包含的文件加载时间长，为了更好的控制，是可以设置等待超时。
+> 注意，这里的超时只是当前等待回调执行的超时，不是让工程准备操作的超时，也就是说这里的超时设置不影响工程准备。
+
+```javascript
+// 去准备, 返回准备的状态值
+var readyState = test.ready ({
+    global: true,// 是否全局有效，默认false非全局(页面刷新会被取消)
+    timeout: 3000,// 3秒后超时
+    onresolve: function () {
+        // 当工程载入并且准备完毕后，会执行这个回调函数
+        // this 就是这个准备好的工程对象
+        console.log (this);
+    },
+    onreject: function () {
+        console.log ('这是超时回调函数');
+    }
+});
+```
+
+
+
+## readyState
+
+返回准备的状态值：
+
+```shell
+-1 表示不存在这个名称的工程，或者这个工程还没有载入进来
+0  表示工程未准备
+1  表示工程准备完成
+2  表示工程准备中
+3  表示工程初始化中
+```
+
+```javascript
+var test = webpanda.data.get ("test");
+console.log (test.$.readyState ());
+```
+
+
+
+
+## selector
+
+数据工程对象的筛选器相关操作。
+
+
+```javascript
+// 这里示例this为数据工程对象
+
+// 如果参数为空，则筛选器节点，可能是 DOM 节点、虚拟节点对象、undefined
+// 如果工程未定义筛选器，则返回编译器的默认筛选器（渲染 DOM 节点），如果未初始化编译器，返回 `undefined` 。
+console.log (this.$.selector ());
+
+// 设置的筛选器（支持DOM节点、DOM节点筛选字符串、虚拟节点对象），返回 this.$ 对象。
+this.$.selector ('body');
+
+// 返回 this.$ 对象，可以链式操作
+this.$.selector ('body').render ();
+```
+
+
+
+## template
+
+数据工程对象的模板相关操作。
+
+```javascript
+// 这里示例this为数据工程对象
+
+// 如果参数为空，返回该工程的模板内容。
+console.log (this.$.template ());
+
+// 设置模板内容
+this.$.template ('这是模板后排内容...', {
+    // 追加的方式,追加数据而不是覆盖: prepend 从前面附加|append 从后面附加
+    mode: "prepend",
+    // 索引。默认的模板索引是0，支持负数，越大的索引拼凑时越排在前面。重复的索引可以覆盖或追加方式config.mode
+    index: -10,
+});
+this.$.template ('这是模板前排内容...', {
+    index: 1,
+});
+
+
+// 设置返回的是 this.$ 对象，所以可以链式操作
+this.$.template ('...').render ();
+```
+
+
+## templateClear
+
+数据工程对象的模板清理操作。
+
+```javascript
+// 这里示例this为数据工程对象
+
+// 如果参数为空，则清理全部索引的模板内容
+this.$.templateClear ();
+// 指定清理某个索引的模板内容
+this.$.templateClear (1);
+```
+
+
+## compiler
+
+数据工程对象的编译器对象。
+
+
+```javascript
+// 详见 webpanda 对象 compiler
+// 这里示例this为数据工程对象
+
+// 获取渲染后的HTML内容
+console.log (this.$.compiler.html ());
+// 获取渲染后的text内容
+console.log (this.$.compiler.text ());
+```
+
+
+## tag
+
+数据工程对象的标签。
+
+在定义数据工程的挂载时，可以将挂载的数据工程对象设为tag。在模板中，可以以HTML tag方式执行使用。
+
+```javascript
+webpanda.data ({
+    mount: {
+        name: 'test',
+        src: 'test.js',
+        tag: 'Test',
+    }
+});
+```
+
+在模板的HTML中使用：
+
+```html
+<Test><Test/>
+```
+
+
+当然，也可以在准备好的数据工程对象上直接添加tag：
+
+```javascript
+// 这里示例this为数据工程对象
+
+this.tag.Test = webpanda.data.get ('test');
+```
+> 注意，这种操作一般是需要准备好的数据工程对象。
+
+
+
+## eventListener
+
+数据工程对象的监听器信息。
+
+
+## event
+
+数据工程对象的事件相关操作。
+
+通过该方法，可以启用或关闭数据工程的事件。有时候在页面工程中调用其他工程，并且其他工程在当前工程也能监控一些事件，可以使用该方法。
 
 执行的优先级：
-先执行页面数据工程事件，再执行局部数据工程事件，最后执行全局数据工程事件
-this.$.event ();
+
+> 1) 先执行页面数据工程事件  
+> 2) 再执行局部数据工程事件  
+> 3) 最后执行全局数据工程事件  
+
 
 在非原生事件中，只对下面的非原生事件有控制效果：
+
 ```shell
 onpage|onpagenotfound|onpageprogress|onpaged|onpageurlchange|onpagedestroy|onurlchange
 ```
+
+除了上列的非原生事件、以及window、document原生事件之外，其他的非原生事件设置无效。
+
+```javascript
+// 这里示例this为数据工程对象
+
+// 如果参数为空，则获取所有的已使用事件的状态信息，返回值是一个 Object
+// 在返回值中 --global 里面是全局的，外面是局部的, 如： {'--global': {onclick: true}, ondblclick: true, ...}
+console.log (this.$.event ());
+
+// 使用该方法进行关闭或开启某几个事件，并且设为局部：
+this.$.event ({
+    // 关闭双击事件
+    ondblclick : false,
+    // 开启显示事件
+    onshow : true,
+});
+
+// 禁用所有的已定义事件，只取消局部的
+this.$.event ({'--local': false});
+// 开启所有的已定义事件，并且设为局部
+this.$.event ({'--local': true});
+
+// 将onclick启用并且将onclick设为全局
+this.$.event ({'--global': {
+	onclick: true
+}});
+
+// 关闭全局事件中的onclick
+this.$.event ({'--global': {
+	onclick: false
+}});
+
+// 所有的已定义事件启用并且设为全局
+this.$.event ({'--global': true});
+// 所有的已定义全局事件全部取消，局部的不取消
+this.$.event ({'--global': false});
+```
+
+
+
+## page
+
+以数据工程对象的信息作为页面配置，来加载页面。
+
+> 执行该方法，会触发数据工程对象的执行、启动、渲染相关事件。
+> 关于 -- 前缀的参数，灵感来源css的自定义变量。与模板解析的 -- 简写属性相呼应。所以是两个“-”符号，而不是一个
+
+
+```javascript
+// 这里示例this为数据工程对象
+
+this.$.page ({
+    // 自定义参数
+    parameter1: 'parameter1',
+    parameter2: 'parameter2',
+    // 是否全局渲染。如果为true, 则表示页面更新不会被关闭渲染和数据观察者
+    '--global': true|false,
+    // 设置筛选器
+    '--selector': 'body',
+    // 支持临时事件
+    '--onpaged': function (e) {
+        // 详见数据工程定义的 onpaged ...
+    }
+});
+```
+
+## execute
+
+执行数据工程。
+
+> 执行该方法，会触发数据工程对象的执行、启动、渲染相关事件。
+
+```javascript
+// 这里示例this为数据工程对象
+
+this.$.execute ({
+    // 自定义参数
+    parameter1: 'parameter1',
+    parameter2: 'parameter2',
+    // 是否全局渲染。如果为true, 则表示页面更新不会被关闭渲染和数据观察者
+    '--global': true|false,
+    // 设置筛选器
+    '--selector': 'body',
+    // 支持临时事件
+    '--onexecuted': function (e) {
+        // 详见数据工程定义的 onexecuted ...
+    }
+});
+```
+
+
+## launch
+
+启动数据工程。
+
+> 执行该方法，会触发数据工程对象的启动、渲染相关事件。
+
+```javascript
+// 这里示例this为数据工程对象
+
+this.$.launch ({
+    // 自定义参数
+    parameter1: 'parameter1',
+    parameter2: 'parameter2',
+    // 是否全局渲染。如果为true, 则表示页面更新不会被关闭渲染和数据观察者
+    '--global': true|false,
+    // 设置筛选器
+    '--selector': 'body',
+    // 支持临时事件
+    '--onlaunched': function (e) {
+        // 详见数据工程定义的 onlaunched ...
+    }
+});
+```
+
+## render
+
+> 执行该方法，会触发数据工程对象的渲染相关事件。
+
+```javascript
+// 这里示例this为数据工程对象
+
+this.$.render ({
+    // 自定义参数
+    parameter1: 'parameter1',
+    parameter2: 'parameter2',
+    // 是否全局渲染。如果为true, 则表示页面更新不会被关闭渲染和数据观察者
+    '--global': true|false,
+    // 设置筛选器
+    '--selector': 'body',
+    // 支持临时事件
+    '--onrendered': function (e) {
+        // 详见数据工程定义的 onrendered ...
+    }
+    '--onrenderpause': function (e) {
+        // 详见数据工程定义的 onrenderpause ...
+    }
+});
+```
+
+
+## start
+
+数据工程对象的开始执行、启动、渲染。
+
+> 在执行生命周期中，表示开始执行；在启动生命周期中，表示开始执行；在渲染生命周期中，表示开始渲染。  
+> 这个是数据工程对象的全局操作，比如在执行生命周期中，表示开始执行、开始启动、开始渲染。  
+> 注意，如果在该方法之前已经执行了 `$.stop()` 那么将无法启动。启动只对暂停时有效。
+
+```javascript
+// 这里示例this为数据工程对象
+
+this.$.start ();
+});
+```
+
+
+## pause
+
+数据工程对象的暂停执行、启动、渲染。
+
+> 生命周期参考 `$.start()`。  
+> 注意，只有正在执行、正在启动、正在渲染才能有效，如果已经停止了，无法暂停。
+
+```javascript
+// 这里示例this为数据工程对象
+
+this.$.pause ();
+});
+```
+
+## stop
+
+数据工程对象的停止执行、启动、渲染。
+
+> 生命周期参考 `$.start()`。
+> 注意，如果已经停止了，使用无效。
+
+```javascript
+// 这里示例this为数据工程对象
+
+this.$.stop ();
+});
+```
+
+
+
+
+## 页面数据工程
+
+在当前页面中，指定使用 `$.page()` 方法执行的数据工程信息，被称之为页面数据工程。
+
+页面数据工程默认情况下启用自己所有的事件为局部事件，并且会根据其筛选器进行渲染。
+
+生命周期执行顺序如下：
+
+```shell
+onexecute -> onlaunch -> onrender -> onrendered -> onlaunched -> onlaunched -> onexecuted
+```
+
+
+## 局部数据工程
+
+
+在当前页面中，某个数据工程进行了局部渲染，或者使用了局部的事件，这些操作的数据工程被称之为局部数据工程。
+
+
+## 全局数据工程
+
+在当前页面中，某个数据工程进行了全局渲染，或者使用了全局的事件，这些操作的数据工程被称之为全局数据工程。
+
+
+## 单例模式
+
+webpand.js 是面向单例模式编程的。每个数据工程都是单例的，是唯一性的。
+
+> 特别注意，在同一个页面中，一个数据工程只会被渲染显示一处，无法多处同时渲染显示的。  
+> 如果想要一个页面多处渲染，需要对数据工程进行拷贝操作，也就是克隆一个新的数据工程。
+
+
+## 全局数据流
+
+正因为数据工程是单例的，所以每个页面都能全局通用，每个数据工程可以相互挂载，状态都是共享的，这样就实现了全局数据流。
 
 
 
 
 # 模板语法
+
+
+## 打印 \-html、$\{\}
+
+允许采用文本特殊符号的模板语法来输出 HTML 内容的变量。也就是说不会执行 `webpanda.HTMLEncode` 方法。
+
+其中，`webpanda-html` 命令不能在同一个标签中存在多个。如果其节点包含子内容，那么其子内容跳过编译过程，会被当做源字符串打印输出，也就是说不会识别模板语法命令。
+
+> 注意， $\{\} 是 webpanda\-html 等价写法。
+
+```html
+<div webpanda-html="name"></div>
+<!--支持单标签-->
+<div webpanda-html="name"/>
+
+<!--字符串的写法-->
+<div>${ message }</div>
+<!--使用 JavaScript 表达式-->
+<div>${ message + '测试' }</div>
+```
+
+
+## 编码打印 \-text、\{\{\}\}
+
+允许采用文本特殊符号的模板语法来输出文本内容的变量。该命令的使用会将html实体编码（自动执行了 `webpanda.HTMLEncode` 方法）。
+
+其中，`webpanda-text` 命令不能在同一个标签中存在多个。如果其节点包含子内容，那么其子内容跳过编译过程，会被当做源字符串打印输出，也就是说不会识别模板语法命令。
+
+> 注意， \{\{\}\} 是 webpanda\-text 等价写法。
+
+```html
+<div webpanda-text="message"></div>
+<!--支持单标签-->
+<div webpanda-text="message"/>
+
+<!--字符串的写法-->
+<div>{{ message }}</div>
+<!--使用 JavaScript 表达式-->
+<div>{{ message + '测试' }}</div>
+```
+
+
+
+## 模板 \-template
+
+该命令用于插入模板字符串。该命令不能在同一个标签中同时存在多个。 该命令会根据模板字符串创建子节点树。
+
+```html
+<div webpanda-template="example"></div>
+```
+
+渲染数据如下：
+
+```javascript
+// 示例compiler是编译对象
+
+// 渲染
+compiler.render ({
+    // 渲染数据
+    data: {
+        example: "<div>{{message}}</div>",
+        message: '这是消息'
+    },
+    selector: "view"
+});
+```
+
+输出的时候会先解析 `example` 模板数据，输出 `{{message}}` 的模板数据：
+
+```html
+<div webpanda-template="example"></div>
+```
+
+
+
+### 定义模板片段
+
+如果使用该命令为空命令，可以里面包裹其他子标签，最终解析、渲染结果将不包含其子节点，只会解析并渲染当前节点。而子节点可以作为其他用途的模板字符串。
+
+
+```html
+<div webpanda-template>
+    <span>这里的节点将不会被渲染，也不会被解析</span>
+</div>
+```
+
+主要用于模板碎片化，利于多个工程之间模板内容相互传递。
+
+
+使用示例伪代码：
+
+> 通过预编译声明获取模板内容：#this.inner 
+
+```html
+<Header webpanda-template webpanda-before="#disable;Header.INNER_TEMPLATE=#this.inner;">
+    <span>这里的节点将不会被渲染，也不会被解析</span>
+</Header>
+```
+
+
+### 模板递归嵌入会造成死循环
+
+因为模板标签是可以解析模板语法的，所以模板标签里面请勿嵌套自身(递归)的模板标签。
+
+如下示例：
+
+```javascript
+// 示例compiler是编译对象
+
+// 渲染
+compiler.render ({
+    // 渲染数据，注意这是错误的示例：example 递归自己
+    data: {
+        example:'<div webpanda-template="example"></div>',
+    },
+    selector: "view"
+});
+```
+
+就会出现如下错误信息（超过最大调用堆栈大小），如下：
+
+```
+Uncaught RangeError: Maximum call stack size exceeded
+```
+
+
+
+
+## 遍历 \-for
+
+该命令用于根据对象、数组来遍历性地渲染一块内容。该命令不能在同一个标签中同时存在多个。 
+
+在下面的命令中`webpanda-for="(v, k, i)items"`，第一个参数`v`是循环单位value的别名；第二个参数`k`是循环单位key的别名并且可以省略；第三个参数`i`是单元个数的别名并且可以省略。多个参数以英文逗号隔开。
+
+```html
+<ul id="example">
+  <li webpanda-for="(item, k, index) items">
+    {{ item.message }}
+  </li>
+</ul>
+```
+
+被遍历变量也可以是一个函数，可以传入函数参数。但这个函数的返回值必须是Array类型或者Object类型的数据：
+
+```html
+<ul id="example" webpanda-for="(item , k) itemsFunction()">
+  <li webpanda-for="(sonItem) item.son(type,'123')">
+    {{ sonItem.message }}
+  </li>
+</ul>
+```
+
+如果只想使用单位值与单位索引，示例：
+
+```html
+<ul id="example" webpanda-for="(item , , index) itemsFunction()">
+</ul>
+```
+
+注意，遍历单位键、值的别名称不能是渲染数据的属性，不然节点会报错，并且不会被渲染。 如下 `k` 别名错误示例：
+
+```javascript
+// 示例compiler是编译对象
+
+// 渲染
+compiler.render ({
+    // 渲染数据
+    data: {
+        type: "这是测试",
+        itemsFunction: function () {
+            return [
+                { 
+                    son: function (args1, args2) {
+                        return {message: args1};
+                    }
+                }
+            ];
+        },
+        // 注意这是错误的示例
+        k: '索引',// 这里与webpanda-for="(item , k) itemsFunction()"中的k冲突
+    },
+    selector: "view"
+});
+```
+
+> 注意，只要报错就会失去自动渲染的能力。
+
+## 遍历标识 \-for\-id
+
+webpanda\-for\-id 就是对节点进行一个标识，用于 webpanda-for ，主要解决在数据修改或更新后，通过id这个唯一标识进行对比虚拟DOM，从而决定节点的重新加载以及复用。
+
+```html
+<ul>
+    <li webpanda-for="(p,index) persons" webpanda-for-id="p.id">
+        {{p.name}}-{{p.age}}
+        <input type="text">
+    </li>
+</ul>
+```
+
+
+
+
+## 指令 &lt;webpanda&gt; 、-webpanda
+
+该命令是将节点当做指令节点，最终的渲染结果将不包含其节点，但会渲染其子节点。
+
+>  注意，原生节点相关的命令都无效果，如 webpanda-style 、webpanda-class 等。
+
+如果同一个标签存在其他的命令，下列命令才有效果：
+
+```shell
+webpanda-before,webpanda-template,webpanda-for,webpanda-if,webpanda-else-if,webpanda-else,webpanda-is,webpanda-text,webpanda-html,webpanda-after
+```
+
+如果非上列命令，让其他命令与其搭配的话将无其他命令效果，因为无效节点是具有优先级的。
+
+
+> 指令一共有两种写法。  
+> 虽然 \<webpanda\>  与 webpanda\-webpanda 的写法不同，但效果是等价的。
+
+
+```html
+<ul id="example">
+    <!-- 标签的方式 -->
+    <webpanda webpanda-for="(item, index) items">
+    <li>
+        {{ item.message }}
+    </li>
+    </webpanda>
+</ul>
+<ul id="example">
+    <!-- 属性的方式 -->
+    <div webpanda-webpanda webpanda-for="(item, index) items">
+    <li>
+        {{ item.message }}
+    </li>
+    </div>
+</ul>
+```
+
+用指令单标签的方式，配合打印命令实现插值`{{}}`功能：
+
+```html
+<webpanda webpanda-text="message"/>
+```
+
+上例等同于下例写法：
+
+```html
+{{message}}
+```
+
+
+
+
+## 条件 \-if、\-else\-if、\-else
+
+该组命令用于条件性地渲染一块内容。这块内容只会在命令的表达式返回 `truthy` 值的时候被渲染。该组命令不能在同一个标签中同时存在或存在多个。
+
+> `webpanda-if` 指令用于条件性地渲染一块内容。这块内容只会在指令的表达式返回 `truthy` 值的时候被渲染。  
+> `webpanda-else` 延伸了 `webpanda-if` 语句，可以在 `webpanda-if` 语句中的表达式的值为 `falsy` 时执行语句。  
+> `webpanda-else-if`，和此名称暗示的一样，是 `webpanda-if` 和 `webpanda-else` 的组合。和 `webpanda-else` 一样，它延伸了 `webpanda-if` 语句，可以在原来的 `webpanda-if` 表达式值为 `falsy` 时执行不同语句。但是和 `webpanda-else` 不一样的是，它仅在 `webpanda-else-if` 的条件表达式值为 `truthy` 时执行语句。
+
+
+```html
+<div webpanda-if="typeof testArray == 'object'">testArray 是一个对象</div>
+<!--条件中间是可以写文本和注释的-->
+<div webpanda-else-if="testArray">
+    testArray 不是数组，但是一个真值
+</div>
+<div webpanda-else>
+    testArray 为假
+</div>
+```
+
+
+
+## 状态 \-is
+
+该命令与`webpanda-if`一样，用于条件性地渲染一块内容。这块内容只会在命令的表达式返回 `truthy` 值的时候被渲染。
+
+该命令不能在同一个标签中存在多个。 如果同时使用了`webpanda-if`、`webpanda-is` 这两个命令时，需要两个命令值都为真时才会去渲染数据。而其中`webpanda-if`会先进行执行判断，然后再执行判断`webpanda-is`。 
+
+> 注意，同一个节点中`webpanda-for`命令相对于`webpanda-is`具有优先级，所以在同一个节点上 `webpanda-is`可以判断`webpanda-for`遍历出来的参数值。
+
+如下所示， `webpanda-is` 不能判断`items`，但能判断其遍历后的 `item` 数据：
+
+```html
+<ul id="example">
+  <li webpanda-for="(item,index)items" webpanda-is="item.id == '1'">
+    {{ item.message }}
+  </li>
+</ul>
+```
+
+而`webpanda-if`相对于`webpanda-for`命令具有优先级，所以是无法在同一个节点上判断其遍历参数。只能判断`items`同级渲染数据。
+
+```html
+<ul id="example">
+  <li webpanda-for="(item,index)items" webpanda-if="typeof items == 'object'" webpanda-is="item.id == '1'">
+    {{ item.message }}
+  </li>
+</ul>
+```
+
+
+
+## 属性 \-attribute
+
+该命令的表达式结果返回字符串作为属性值。
+
+该命令在同一个标签中可以存在多个。语法为`webpanda-attribute="对象表达式"`，示例如下：
+
+```html
+<div webpanda-attribute="{name:'attrTestName', id:'attrTestId', var:attrTest}">添加属性</div>
+<div webpanda-attribute="{as:attrTestAs}">属性添加全名称</div>
+<div webpanda-attribute="{as:attrTestAs}" webpanda-attribute="arrObjsTest">可以存在多个属性设置</div>
+```
+
+input、option 值的设置：
+
+```html
+<input type="Text" webpanda-attribute="{value:setValue}"/>
+<input type="Radio" webpanda-attribute="{checked:setBool}"/>
+<select>
+    <option webpanda-attribute="{selected:'selected',value:'hk'}">Hong Kong</option>
+</select>
+```
+
+textarea 值的属性设置：
+
+```html
+<textarea webpanda-attribute="{value:setValue}"></textarea>
+```
+
+等价于：
+
+```html
+<textarea>{{setValue}}</textarea>
+```
+
+> 注意，在 textarea 标签中，webpanda\-attr="\{value:setValue\}" 的用法是具有优先级的。
+
+
+
+### 单个属性操作 \-attribute\-\*
+
+如果是单个属性操作，可以使用 `webpanda-attribute-[属性名称]="值"` 方式设置，如下所示：
+
+```html
+<input type="Text" webpanda-attribute-value="setValue"/>
+<textarea webpanda-attribute-value="setValue"></textarea>
+```
+
+
+
+
+
+## 类 \-class
+
+该命令的表达式结果的类型必须是对象。该命令在同一个标签中可以存在多个。
+
+语法为`webpanda-class="对象表达式"`，与 `webpanda-attr` 语法一样。
+
+对象的键名称渲染出来即是类名称，这个类名称是否存在将取决于对应值的返回值是否为真。下面的语法表示 `active` 这个 class 存在与否将取决于渲染数据 `isActive` 是否为真：
+
+```html
+<div webpanda-class="{ active: isActive }"></div>
+```
+
+在对象中传入更多属性来动态切换多个 class。此外，`webpanda-class` 指令也可以与普通的 class 属性共存。下面的语法表示`isStatic`为假，那么会删除`static`类。同理，当`isActive`、`hasError`为假，那么`active`与`text-danger`会被删除，反之则添加。
+
+```html
+<div class="static" webpanda-class="{ active: isActive, 'text-danger': hasError, static: isStatic }"></div>
+```
+
+如果你也想根据条件切换列表中的 class，可以用三元表达式：
+
+```html
+<div webpanda-class="{active:(isActive == 'test'?true:false)}"></div>
+```
+
+支持字符串的形式:
+
+```html
+<div webpanda-class="`active-{{ n }}`"></div>
+```
+
+
+### 单个类名称操作 \-class\-\*
+
+如果是单个类名称操作，可以使用 `webpanda-class-[类名称]="布尔值"` 方式设置，如下所示：
+
+```html
+<div webpanda-class-active="{(isActive == 'test'?true:false)}"></div>
+```
+
+
+
+
+
+## 样式 \-style
+
+该命令的表达式结果的类型必须是对象。该命令在同一个标签中可以存在多个。
+
+语法为`webpanda-style="对象表达式"`，与 `webpanda-attr` 语法一样。
+
+CSS 属性名可以用驼峰式 (camelCase) 或短横线分隔 (kebab-case，记得用引号括起来) 来命名：
+
+```html
+<div webpanda-style="{ color: activeColor, fontSize: fontSize + 'px' }"></div>
+```
+
+可以为 `webpanda-style` 绑定中的属性提供一个包含多个值的数组，常用于提供多个带前缀的值，例如：
+
+```html
+<div webpanda-style="{ display: ['-webkit-box', '-ms-flexbox', 'flex'] }"></div>
+```
+
+这样写只会渲染数组中最后一个被浏览器支持的值。在本例中，如果浏览器支持不带浏览器前缀的 `flexbox`，那么就只会渲染： `display: flex`
+
+
+
+### 删除样式操作 
+
+有时候还可以根据渲染数据的真假值来删除样式，如下，当`v`为假则设为空字符串 ，便会取消掉该样式：
+
+```html
+<div style="color:green;" webpanda-style="{'color': (v?'red':'') }"></div>
+```
+
+> 特别注意，与 `webpanda-class` 命令不同，删除样式必须是空字符串，如果是 `false`、`null` 则存在不会生效。  
+那么为什么框架不将 `false` 、 `null` 自动转为空字符串呢？ 为了以后扩展吧。
+
+
+
+
+### 单个样式操作 \-style\-\*
+
+
+如果是单个样式操作，可以使用 `webpanda-style-[样式名称]="样式值"` 方式设置，如下所示：
+
+```html
+<!-- 注意，webpanda-style-fontSize 则无效, 因为会被转换为小写 fontsize, 所以单个需要使用 “-” 符号 -->
+<div webpanda-style-font-size="fontSize + 'px'"></div>
+```
+
+> 注意，单个样式操作，后面的值不要加 “`;`” 符号，不然在原生中赋值不起作用。
+
+
+
+## 事件 \-event
+
+该命令的表达式中可以多个事件，该命令在同一个标签中可以存在多个。
+
+表达式中，多个事件调用同一个方法则以空格隔开。语法格式：`webpanda-on[事件名称]="JavaScript 代码"` 。
+
+直接执行表达式：
+
+```html
+<div webpanda-onclick="n++">这是一个点击事件</div>
+```
+
+传入自定义参数：
+
+```html
+<div webpanda-onclick="n++;eClickFnTest(123,'abc',$val)">这是一个点击事件</div>
+```
+
+指定方法函数接收预编译声明，需要加上`#`符号前缀，表示赋值给所在位置参数：
+
+```html
+<div webpanda-onclick="eClickFnTest(#node,#event)">这是一个点击事件</div>
+```
+
+指定方法函数接收预编译声明并且传入自定义参数：
+
+```html
+<div webpanda-onclick="eClickFnTest($val,#event,#node)">这是一个点击事件</div>
+```
+
+在同一个标签中可以存在多个，并且一个标签支持多个事件名称 `webpanda-on*-on*-on*-N` ：
+
+```html
+<input value="" webpanda-oninput-onpropertychange="eChangeFnTest(#node,#value)" webpanda-onclick="eClickFnTest()" />
+```
+
+> 注意，多个事件名称必须名称要写全，也就是必须 `on` 开头，这样才会被识别。
+
+
+
+
+### 返回值为false，阻止事件默认行为
+
+在HTML标签中，写法如下：
+
+```html
+<a href="https://www.baidu.com/" webpanda-onclick="return false"></a>
+```
+
+或者让函数执行并返回结果：
+
+```html
+<a href="https://www.baidu.com/" webpanda-onclick="return eClickFnTest(#event)"></a>
+```
+
+当然，在事件处理函数中，可自行操作：
+
+```javascript
+this.eClickFnTest = function (e) {
+    // 取消事件的默认行为
+    e.preventDefault ();
+    // 也可以直接返回 false，前提在标签中也用了 return
+    return false;
+};
+```
+
+
+
+### 模板预编译声明 \#preventDefault，阻止事件默认行为
+
+```html
+<a href="https://www.baidu.com/" webpanda-onclick="#preventDefault"></a>
+```
+
+
+
+
+### 模板预编译声明 \#stopPropagation，阻止事件冒泡
+
+方式一，通过模板预编译声明实现：
+
+```html
+<div>
+	<a webpanda-onclick="#stoppropagation;eClickFnTest (#event)"></a>
+</div>
+```
+
+方式二，在事件处理函数中，可以自行操作：
+
+```javascript
+/* <div>
+	<a webpanda-onclick="eClickFnTest (#event)"></a>
+</div> */
+this.eClickFnTest = function (e) {
+    // 阻止冒泡
+    e.stopPropagation ();
+    // ......
+};
+```
+
+
+
+
+
+## 前置 \-before
+
+该命令中可以运行 javaScript 表达式，该命令在同一个标签中可以存在多个。
+
+> 不要在前置命令内同时做数据的发布、订阅操作，这样会出现死循环。
+
+最好在命令开始禁用发布：
+
+```html
+<div webpanda-before="#disablepublish;methodFnTest(#node)"></div>
+```
+
+
+
+节点最先执行的命令，并且优先级在 `webpanda-if` 之前 ，所以始终能获取节点的信息。
+
+```html
+<div webpanda-before="methodFnTest"></div>
+```
+
+在渲染过程中，该模板语法是最后才进行渲染的，所以可以在这一步进行节点取值，指定方法函数接收预编译声明，需要加上`#`符号前缀，或传入自定义参数，实现其他处理场景：
+
+```html
+<div webpanda-before="methodFnTest(123,'abc',#node);count++"></div>
+```
+
+在同一个标签中可以存在多个：
+
+```html
+<input value="" webpanda-before="methodFnTest()" webpanda-before="methodFnTest2(#node,#value)"/>
+```
+
+一般场景用得最多的，就是循环节点了：
+
+```html
+<div webpanda-for="(value, index)arr">
+    <div webpanda-before="getValue(#template, value)"></div>
+</div>
+```
+
+注意，配合循环节点 `webpanda-for` 的使用的时候，`webpanda-before` 会被多执行一次，这是因为`webpanda-before` 具有优先级，会在遍历命令未处理之前会执行一次。如下：
+
+```html
+<div webpanda-before="getValue(#template)" webpanda-for="(value, index)arr" ></div>
+```
+
+还有一种情况会被多次执行，那就是获取节点的时候，会绑定，节点创建后更新渲染：
+
+```html
+<div webpanda-before="getValue(#node)" webpanda-for="(value, index)arr" ></div>
+```
+
+当然还有其他情况造成多次执行，比如在命令表达式中使用其他渲染数据而触发绑定也会重复执行。
+
+
+
+## 后置 \-after
+
+该命令中可以运行 javaScript 表达式，该命令在同一个标签中可以存在多个。
+
+> 不要在后置命令内同时做数据的发布、订阅操作，这样会出现死循环。
+
+最好在命令开始禁用发布：
+
+```html
+<div webpanda-after="#disablepublish;methodFnTest(#node)"></div>
+```
+
+
+
+节点最后执行的命令是在节点添加到父级节点上之后执行，用法同 `webpanda-before` 命令。
+
+```html
+<div webpanda-after="methodFnTest(#node)"></div>
+```
+
+注意，该命令是在 `webpanda-if` 、`webpanda-is` 命令之后执行的。所以如果前面判断为假，那么该后置命令是不会被执行的。
+
+
+
+## 元素 \-element
+
+该命令中可以运行 javaScript 表达式，该命令在同一个标签中可以存在多个。
+
+该命令会节点成功创建的时候执行，不会被重复执行，所以不会设置环境上下文。对渲染变量不会变动监听。
+
+```html
+<div webpanda-element="nodevar=#node"></div>
+```
+
+> 注意，如果节点已经创建了，重复渲染是不会执行的。也就是说只会在节点创建时执行。
+
+
+
+## 模板预编译声明
+
+预编译声明，即在参数前面加上`#`符号作为预处理前缀，不区分大小写，如下示例：
+
+```html
+<div webpanda-after="testFunction(#node,#value,#EVENT,#template)"></div> 
+<div webpanda-style="{'color':getColor(#node,#this)}"></div>
+```
+
+```shell
+| 参数标签         | 值类型 | 描述                                                         |
+| :--------------- | :----- | :----------------------------------------------------------- |
+| this             | Object | 获取当前抽象节点树                                           |
+| event            | Object | 获取当前事件对象                                             |
+| stopPropagation  | Void   | 停止事件冒泡                                                 |
+| preventDefault   | Void   | 取消事件的默认行为                                           |
+| disable          | Void   | 禁用观察者的订阅与发布：在命令中可以使用逗号运算符分隔 `-if="#disable, ..."` |
+| disableSubscribe | Void   | 禁用观察者的订阅                                             |
+| disablePublish   | Void   | 禁用观察者的发布                                             |
+| clear            | Void   | 清理模板与打印的缓存数据                                     |
+| node             | Object | 获取标签的节点对象。这个注意，节点的渲染出错等等，该参数在实际情况有可能为null |
+| value            | Mixed  | 获取节点的值，一般用于input、textarea、select等表单节点      |
+| template         | String | 获取节点编译时的模板数据                                     |
+| html             | String | 获取节点的html内容                                           |
+| text             | String | 获取节点包含的文本内容组合起来的文本                         |
+| webpanda         | Object | 获取 webpanda 对象                                           |
+| window           | Object | 获取 window 对象，用于在模板中使用全局变量                   |
+```
+
+
+
+
+
+# 模板技巧
+
+
+## 命令前缀  “webpanda\-” 简写为 “\-”
+
+可以将 `webpanda-` 属性前缀，简写为 `-` 。
+
+如下：
+
+```html
+<div webpanda-html="message" />
+```
+
+简写为：
+
+```html
+<div -html="message" />
+```
+
+又如：
+
+```html
+<div webpanda-if="typeof testArray == 'object'">testArray 是一个对象</div>
+```
+
+简写为：
+
+```html
+<div -if="typeof testArray == 'object'">testArray 是一个对象</div>
+```
+
+
+
+## 命令前缀  “webpanda\-attribute-” 简写为 “\-\-”
+
+如下：
+
+```html
+<a webpanda-attribute-href="'#'+count"></a>
+<a webpanda-attribute="{href:'#'+count}"></a>
+```
+
+简写为：
+
+```html
+<a -attribute-href="'#'+count"></a>
+<a webpanda--href="'#'+count"></a>
+<a --href="'#'+count"></a>
+```
+
+
+
+##  字符串与变量拼接，使用 “ \`\`” 符号
+
+```html
+<!-- {{}} 会将html实体编码 -->
+<i class="iconfont-icon" -class="`icon-{{ v.icon }}`"></i>
+<i class="iconfont-icon" -class="`icon-${ v.icon }`"></i>
+```
+
+
+
+
+## 模板命令中使用js关键字
+
+在模板中也可以使用js关键字，但只支持下面几个关键字：
+
+```shell
+new return typeof instanceof debugger false true null undefined
+```
+
+示例：
+
+```html
+<!-- 取消事件的默认行为 -->
+<a --href="getUrl()" -onclick="return false"></a>
+
+<!-- 循环临时数组 -->
+<div -for="(v,k) new #window.Array(13)">
+    {{k}}
+</div>
+```
+
+> 注意，在模板命令中不支持 `if else function` 关键字。
+
+
+
+
+
+
+
+## 执行顺序、优先级
+
+```shell
+# void 情况：<webpanda /> 、 -webpanda
+before > if|else-if|else > template > for > is > print > void > after
+# 非 void 情况
+before > if|else-if|else > template > for > is > 创建节点 element > print > 添加到父节点 > children > 特殊节点渲染 [element-textarea] [element-svg] > attribute > class > style > event > after
+```
+
+## 模板预编译声明会不会与字符串的 “\#” 井号冲突呢？不会
+
+如下写法：
+
+```html
+<h1 --test="'#node-'+title" -after="#window.console.log (#node)">{{title}}</h1>
+```
+
+上面的代码中，`'#node-'+title` 的 `#node` 会不会被解析成模板预编译声明呢？明确告诉你，不会！
+
+因为编译器会自动识别是否在字符串内（是否在单引号或双引号内），如果是字符串则不会被解析的。而后面 `-after="#window.console.log (#node)"`  的 `#node` 则会被解析成模板预编译声明。
+
+
+
+
+## 在模板中使用全局变量
+
+使用 `#window` 预编译声明：
+
+```html
+<!-- 使用 console.log -->
+<select multiple="multiple" -onchange="#window.console.log (#value)"> </select> 
+
+<!-- 打印当前URL -->
+<div>{{#window.webpanda.url().toString ()}}</div>
+
+<!-- 循环临时数组 -->
+<div -for="(v,k) new #window.Array(13)">
+    {{k}}
+</div>
+<div -for="(v, k) [11, 22, '这是第三个元素', 44]">
+    {{k}} : {{v}}
+</div>
+```
+
+
+
+
+## 数据绑定的实现
+
+```html
+<!-- 单向绑定：渲染数据变动则输入框值也会变，但输入框值变动，渲染数据不变 -->
+<input type="text" --value="inputValue1" />
+<!-- 单向绑定：输入框值变动则渲染数据也会变，但渲染数据变动，输入框值不变 -->
+<input type="text" -oninput-onpropertychange="inputValue2=#value;" />
+<!-- 双向绑定 -->
+<input type="text" --value="inputValue3" -oninput-onpropertychange="inputValue3=#value;" />
+
+<!-- -oninput-onpropertychange 是兼容方式的写法，onpropertychange为IE专属的，IE9以下的浏览器是不支持oninput事件。如果不考虑IE，那么直接 -oninput="..." 即可-->
+```
+
+
+
+## 为什么框架不提供数据绑定命令？
+
+绑定应该不是框架需要提供的，而是由开发者自己去实现，比如：
+
+```html
+<input webpanda-element="bindValue(#node)" />
+```
+
+
+
+
+
+
+## 表单取值代码示例
+
+```html
+<!-- Radio 单元示例 -->
+<input type="Radio" name="RadioName" value="1" -onchange="inputvalue = (#node).checked? '选中':'未选中';radioValue = #value;" --checked="radioValue == #value"> 单选1 
+<input type="Radio" name="RadioName" value="2" -onchange="inputvalue = (#node).checked? '选中':'未选中';radioValue = #value;" --checked="radioValue == #value"> 单选2
+<input type="Radio" name="RadioName" value="3" -onchange="inputvalue = (#node).checked? '选中':'未选中';radioValue = #value;" --checked="radioValue == #value"> 单选3
+<!-- Checkbox 多选示例 -->
+<input type="Checkbox" -onchange="inputvalue = (#node).checked? '选中':'未选中';checkedState = (#node).checked;" value="多选测试" --checked="checkedState"> 多选 
+```
+
+> 表单是select，也可以使用 `#value` 预编译声明，如果多选，将返回一个数组，其包含所选的值；如果是单选，则直接返回选择的值；如果没有初始值，则返回空字符串。
+
+```html
+<select multiple="multiple" -onchange="#window.console.log (#value)"> 
+    <optgroup label="喜欢">
+        <option value="n">牛</option> 
+        <option value="m">马</option> 
+        <option value="g">狗</option> 
+    </optgroup>
+    <optgroup label="不喜欢">
+        <option value="sz">狮子</option> 
+        <option value="lh">老虎</option> 
+    </optgroup>
+</select> 
+```
+
+单个选项的示例，获取选中的值与文本内容：
+
+```html
+<select -onchange="#window.console.log (#value, #node.options[#node.options.selectedIndex].text);"> 
+    <optgroup label="喜欢">
+        <option value="n">牛</option> 
+        <option value="m">马</option> 
+        <option value="g">狗</option> 
+    </optgroup>
+    <optgroup label="不喜欢">
+        <option value="sz">狮子</option> 
+        <option value="lh">老虎</option> 
+    </optgroup>
+</select> 
+```
+
+
+
+## 模板表达式中的 this 与 \#this 区别
+
+`this` 是表示渲染数据，如下所示，三种写法是等价的：
+
+```html
+<div -style-color="this['colorRed']"></div>
+<div -style-color="this.colorRed"></div>
+<div -style-color="colorRed"></div>
+```
+
+`#this` 是获取当前虚拟节点对象，如下所示：
+
+```html
+<h1 -after="#window.console.log (#this)">{{title}}</h1>
+```
+
+
+## \-template 和 \-html 命令比较
+
+
+`webpanda-template`与`webpanda-html`最大区别：
+
+> `webpanda-template` 会将模板中存在的模板语法递归解析出来，而 `webpanda-html` 里面存在的模板语法是不会被解析的。
+
+
+
+## 模板渲染出现”Maximum call stack size exceeded“错误
+
+这是因为死循环造成的。
+
+> 检查模板命令，是否存在模板标签里面嵌套递归自身的模板标签。详见：**模板语法** 模板 `webpanda-template`  
+> 检查 `webpanda-before` `webpanda-after` 相关的模板语法命令中，数据响应式的订阅和发布，是否按照要求禁止呢？  
+
+
+
+
+
+
+
+
+
+
+
 
 
 
