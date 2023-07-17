@@ -370,7 +370,6 @@ webpanda.language.target ('ERROR');
 插件设置。
 
 ```javascript
-
 // 插件类型
 console.log (webpanda.plugin.type);
 
