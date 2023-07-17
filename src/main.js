@@ -126,22 +126,25 @@ webpanda.mount.onhtmlready = function (callback) {
 };
 
 
-// 基础配置
-webpanda.config ({
+// 使用插件
+webpanda.plugin ({
 
     /**
      * 引入包含配置
-     * @param {function({resolve:Function,reject:Function})} e ({resolve(结果) 成功执行, reject(错误信息) 失败时执行}) 
+     * @param {function({receive:Function,resolve:Function,reject:Function})} e ({receive(收到), resolve(结果) 成功执行, reject(错误信息) 失败时执行}) 
      */
-    include: function (e) {
-
+    pluginInclude: function (e) {
+    
+        // 收到
+        e.receive ();
+    
         /**
          * 可以根据 this.map 储存已加载的资源到浏览器缓存
          * 主要是储存text类型的内容，存在浏览器缓存就直接返回缓存的数据即可
          * ------------------------------------------
          * 资源的加载由开发者可自行封装或者使用其他第三方库
          */
-
+    
         // 生成环境下添加版本号
         var builder = webpanda.mount.__builder || null;
         if (builder && builder.version) {
@@ -149,7 +152,7 @@ webpanda.config ({
         } else {
             // 调试模式加上时间戳禁止页面缓存
             // this.url.query.debug = Date.parse(new Date());
-
+    
             var dates = new Date ();
             var times = [
                 dates.getFullYear (),// 年
@@ -164,7 +167,7 @@ webpanda.config ({
             // 缓存一天
             this.url.query.d = times.join ('');
         }
-
+    
         if (['js', 'css', 'less', 'scss', 'sass'].indexOf (this.type) >= 0) {
             var handle = new webpanda.mount.Require ({
                 url: this.url,
@@ -195,8 +198,19 @@ webpanda.config ({
             });
             handle.send ();
         }
-
+    
     },
+    // 插件入口
+    webpandaPluginMain: function (plugin) {
+        if (plugin.type === webpanda.plugin.type.include) {
+            this.pluginInclude.call (plugin.arguments[0], plugin.arguments[1]);
+        }
+    }
+});
+
+
+// 基础配置
+webpanda.config ({
     // 路由设置
     router: {
         // 模式: hash | history
@@ -221,7 +235,7 @@ webpanda.onhtmlready (function () {
 // 运行框架
 webpanda.run ();
 // 路由数据工程准备好后执行框架
-webpanda.mount.Router.$.ready (function () {
+webpanda.Router.$.ready (function () {
     this.$.event ({ '--global': true });// 将路由事件设为全局模式
     webpanda.page ();
 });
