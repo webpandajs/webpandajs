@@ -5,6 +5,8 @@ webpanda.language ({
     10000003: 'Warning command',
     10000004: 'Reference information',
 
+    10001000: 'Plugin of type "${1}" is missing',
+
     20000001: 'The "${1}" command cannot exist in the same tag at the same time or more than one',
     20000002: 'The "${1}" command cannot have more than one tag',
     20000003: 'The "${1}" command cannot be empty',
