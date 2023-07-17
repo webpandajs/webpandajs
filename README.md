@@ -1,4 +1,4 @@
-# webpanda.js 👋
+# webpanda.js 🐼
 
 webpanda.js 是面向前后端分离、视图与数据分离, 基于 ECMAScript 5 特性的单页应用 (SPA) 框架。
 
@@ -363,6 +363,34 @@ webpanda.language ({
 // 渲染语言
 webpanda.language.target ('ERROR');
 ```
+
+
+## plugin
+
+插件设置。
+
+```javascript
+
+// 插件类型
+console.log (webpanda.plugin.type);
+
+// 函数的方式设置：
+webpanda.plugin (function (plugin) {
+    console.log (plugin);
+});
+
+// 对象的方式设置：
+webpanda.plugin ({
+
+    // 传入的对象必须要有一个 webpandaPluginMain 命名的方法函数
+    webpandaPluginMain: function (plugin) {
+        console.log (plugin);
+    },
+
+});
+```
+
+
 
 
 ## compiler
