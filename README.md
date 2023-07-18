@@ -2234,6 +2234,12 @@ webpanda.data ({
 数据工程对象的名称。
 
 ```javascript
+// 这里示例this为数据工程对象
+
+// 打印名称
+console.log (this.$.name);
+
+
 // 根据名称获取数据工程对象
 console.log (webpanda.data.get ('test'));
 ```
@@ -2242,15 +2248,35 @@ console.log (webpanda.data.get ('test'));
 
 数据工程对象会自动创建一个索引，具备全局唯一，即使相同的工程名称删除后再创建，其索引也不一样。
 
+```javascript
+// 这里示例this为数据工程对象
+
+// 打印索引
+console.log (this.$.index);
+```
+
 
 ## base
 
 数据工程对象继承的父级信息。
 
+```javascript
+// 这里示例this为数据工程对象
+
+// 打印父级信息
+console.log (this.$.base);
+```
 
 ## derived
 
 数据工程对象被继承的派生信息。
+
+```javascript
+// 这里示例this为数据工程对象
+
+// 打印派生信息
+console.log (this.$.derived);
+```
 
 
 ## clone
@@ -2283,6 +2309,10 @@ this.$.clone ().$.ready ();
 
 删除数据工程对象，包括清理已经渲染在页面上的节点等信息。删除后，该数据工程将被移除，包括其父级与派生的关系，注意，但不会删除派生和父级的数据工程对象。
 
+```javascript
+// 这里示例this为数据工程对象
+this.$.remove ();
+```
 
 
 ## ready
