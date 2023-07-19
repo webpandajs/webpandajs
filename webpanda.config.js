@@ -8,6 +8,7 @@ module.exports = {
     // 拷贝根文件
     root: [
         'favicon.ico',
+        'CNAME',
         'README.md'
     ],
     // 忽略配置
