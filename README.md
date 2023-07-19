@@ -480,7 +480,7 @@ console.log (compiler.text());
 
 ```javascript
 
-// 给数据设置观察者
+// 给数据设置观察者，如果存在禁止观察者你那么设置操作将被忽略
 webpanda.observer ({
     // 必须是一个对象
     // ...
@@ -496,16 +496,17 @@ webpanda.observer.enable ({
     // ...
 });
 
+var obj = {};
 
-// 判断是否有观察者
-console.log (webpanda.observer.has());
-// 判断是否有禁止观察者
-console.log (webpanda.observer.hasDisable());
+// 判断对象是否启用了观察者
+console.log (webpanda.observer.enableStatus (obj));
+// 判断对象是否禁止了观察者
+console.log (webpanda.observer.disableStatus (obj));
 
-// 删除观察者
-webpanda.observer.remove();
-// 取消禁止观察者
-webpanda.observer.removeDisable();
+// 删除对象的启用观察者
+webpanda.observer.enableRemove (obj);
+// 取消对象的禁止观察者
+webpanda.observer.disableRemove (obj);
 
 
 // 忽略观察者的订阅、发布的操作
