@@ -125,6 +125,11 @@ if (config.minify && config.minify.uglifyjs) {
 helper.console.configlog ('minify.uglifyjs.options', uglifyjsOptions);
 
 
+// 获取入口文件的绝对路径
+var builderMainPath = helper.path (config.main||'src/main.js');
+helper.console.configlog ('main', builderMainPath);
+
+
 /**
  * 移动index.html
  */
@@ -152,9 +157,6 @@ try {
     return process.exit();
 }
 
-// 获取入口文件的绝对路径
-var builderMainPath = helper.path (config.main||'src/main.js');
-helper.console.configlog ('main', builderMainPath);
 
 
 /**

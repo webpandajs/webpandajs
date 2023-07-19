@@ -22,23 +22,15 @@ webpanda.data ({
          * 加载数据
          */
         this.load = function () {
-            
-            var dates = new Date ();
-            var times = [
-                dates.getFullYear (),// 年
-                dates.getMonth ()+1,// 月
-                dates.getDate (),// 日
-                dates.getHours (),// 时
-                // dates.getMinutes (),// 分
-                // dates.getSeconds (), //秒
-                // dates.getMilliseconds () //毫秒
-            ];
-            
-            // 缓存一天
-            var query = {
-                d: times.join ('')
+            var builder = webpanda.__builder || null;
+            if (builder && builder.version) {
+                var query = {
+                    v: builder.version
+                }
+            } else {
+                var query = null;
             }
-
+            
             this.loading = true;
             this.error = null;
             this.data = null;

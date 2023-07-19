@@ -49,7 +49,7 @@ webpanda.mount.ready = function (name, options) {
  * @return {String} 
  */
 webpanda.mount.src = function (src) {
-    var builder = webpanda.mount.__builder || null;
+    var builder = webpanda.__builder || null;
     return (builder && builder.src ? builder.src + src : '/src/' + src);
 };
 
@@ -146,26 +146,26 @@ webpanda.plugin ({
          */
     
         // 生成环境下添加版本号
-        var builder = webpanda.mount.__builder || null;
+        var builder = webpanda.__builder || null;
         if (builder && builder.version) {
             this.url.query.v = builder.version;
         } else {
             // 调试模式加上时间戳禁止页面缓存
             // this.url.query.debug = Date.parse(new Date());
     
-            var dates = new Date ();
-            var times = [
-                dates.getFullYear (),// 年
-                dates.getMonth ()+1,// 月
-                dates.getDate (),// 日
-                // dates.getHours (),// 时
-                // dates.getMinutes (),// 分
-                // dates.getSeconds (), //秒
-                // dates.getMilliseconds () //毫秒
-            ];
+            // var dates = new Date ();
+            // var times = [
+            //     dates.getFullYear (),// 年
+            //     dates.getMonth ()+1,// 月
+            //     dates.getDate (),// 日
+            //     // dates.getHours (),// 时
+            //     // dates.getMinutes (),// 分
+            //     // dates.getSeconds (), //秒
+            //     // dates.getMilliseconds () //毫秒
+            // ];
             
-            // 缓存一天
-            this.url.query.d = times.join ('');
+            // // 缓存一天
+            // this.url.query.d = times.join ('');
         }
     
         if (['js', 'css', 'less', 'scss', 'sass'].indexOf (this.type) >= 0) {
