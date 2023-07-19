@@ -3,11 +3,14 @@ const helper = require('./helper');
 const copyright = require('./copyright');
 const config = require(helper.path ('webpanda.config.js'));
 
+// 创建dist目录名称
+helper.createDistname (config.dist||null);
+
 // 打印路径
 helper.console.configlog ('root', helper.__rootname);
-helper.console.configlog ('dist', helper.__distname);
 helper.console.configlog ('library', helper.__libraryname);
 helper.console.configlog ('src', helper.__srcname);
+helper.console.configlog ('dist', helper.__distname);
 
 // 统计信息
 var statistics = {
@@ -122,35 +125,25 @@ if (config.minify && config.minify.uglifyjs) {
 helper.console.configlog ('minify.uglifyjs.options', uglifyjsOptions);
 
 
-// 生成一个版本号
-var dates = new Date ();
-var times = [
-    dates.getFullYear (),// 年
-    dates.getMonth ()+1,// 月
-    dates.getDate (),// 日
-    dates.getHours (),// 时
-    dates.getMinutes (),// 分
-    dates.getSeconds (), //秒
-    dates.getMilliseconds () //毫秒
-];
-var builderVersion = times.join ('');
-
-// 获取配置的绝对路径
-var builderMainPath = helper.path ('src/main.js');
-helper.console.configlog ('main.js', builderMainPath);
-
-// 获取特殊信息
-var builderIndexfile = 'index.html';
-var builderIcofile = 'favicon.ico';
-
-// 移动index.html
+/**
+ * 移动index.html
+ */
 try {
-    var builderIndexContents = helper.getFileContents (helper.path (builderIndexfile));
+    // 获取index.html
+    var builderIndexfile = config.index||'index.html';
+    var builderIndexPath = helper.path (builderIndexfile);
+    helper.console.configlog ('index', builderIndexPath);
+    var builderIndexContents = helper.getFileContents (builderIndexPath);
+
+    /**
+     * 来源src="/src/都要加版本号，并且清理query
+     * 例如相关文件 src="/src/main.js" | src="/src/router.js"
+     */
+    builderIndexContents = builderIndexContents.replace (/src\=[\"\']\/([^\"\']+)\.js([^\"\']{0,})[\"\']/gi, 'src="/$1.js?version=' + helper.version + '"');
     // 替换src="/src/
     builderIndexContents = builderIndexContents.replace (/src\=\"\/src\//g, 'src="/').replace (/href\=\"\/src\//g, 'href="/');
-    // 添加版本号 src="/src/main.js" | src="/src/router.js"
-    builderIndexContents = builderIndexContents.replace (/src\=[\"\']\/main.js([^\"\']{0,})[\"\']/, 'src="/main.js?version=' + builderVersion + '"');
-    builderIndexContents = builderIndexContents.replace (/src\=[\"\']\/router.js([^\"\']{0,})[\"\']/, 'src="/router.js?version=' + builderVersion + '"');
+    
+    // 拼凑拷贝的构建路径
     var builderIndexDistPath = helper.pathJoin (helper.__distname, builderIndexfile);
     helper.setFileContents (builderIndexDistPath, helper.minifyhtml (builderIndexContents, htmlminifierOptions));
     helper.console.buildlog (builderIndexDistPath);
@@ -159,15 +152,38 @@ try {
     return process.exit();
 }
 
-// 移动favicon.ico
-try {
-    var builderIcoDistPath = helper.pathJoin (helper.__distname, builderIcofile);
-    helper.copyFile (helper.path (builderIcofile), builderIcoDistPath, true);
-    helper.console.copylog (builderIcoDistPath);
-} catch (err) {
-    helper.console.error ('构建favicon.ico失败', err);
-    return process.exit();
+// 获取入口文件的绝对路径
+var builderMainPath = helper.path (config.main||'src/main.js');
+helper.console.configlog ('main', builderMainPath);
+
+
+/**
+ * 移动root文件
+ */
+if (config.root && config.root instanceof Array) {
+    for (var i = 0; i < config.root.length; i ++) {
+
+        /**
+         * @type {String}
+         */
+        var builderRootFile = config.root[i];
+        if (typeof builderRootFile !== 'string' || builderRootFile === '') {
+            continue;
+        }
+        
+        try {
+            var builderRootDistPath = helper.pathJoin (helper.__distname, builderRootFile);
+            helper.copyFile (helper.path (builderRootFile), builderRootDistPath, true);
+            helper.console.copylog (builderRootDistPath);
+        } catch (err) {
+            helper.console.error ('拷贝root文件失败', err);
+            return process.exit();
+        }
+    }
 }
+
+
+
 
 /**
  * 是否需要压缩
@@ -260,7 +276,7 @@ try {
                 var uglifyjs = helper.uglifyjs (originContents, uglifyjsOptions);
                 // 判断是否为配置文件，那么在前面加上构建信息
                 if (srcPath === builderMainPath) {
-                    uglifyjs.code = 'webpanda.mount.__builder={version:"' + builderVersion + '",src:"/"};' + uglifyjs.code;
+                    uglifyjs.code = 'webpanda.mount.__builder={version:"' + helper.version + '",src:"/"};' + uglifyjs.code;
                 } 
                 var minify = copyright + uglifyjs.code;
             } 

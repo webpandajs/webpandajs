@@ -1,4 +1,15 @@
 module.exports = {
+    // index 页面
+    index: 'index.html',
+    // 入口文件
+    main: 'src/main.js',
+    // 打包的目录名称
+    dist: 'docs',
+    // 拷贝根文件
+    root: [
+        'favicon.ico',
+        'README.md'
+    ],
     // 忽略配置
     ignore: {
         extension: {
