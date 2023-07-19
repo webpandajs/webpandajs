@@ -144,7 +144,7 @@ try {
      * 来源src="/src/都要加版本号，并且清理query
      * 例如相关文件 src="/src/main.js" | src="/src/router.js"
      */
-    builderIndexContents = builderIndexContents.replace (/src\=[\"\']\/([^\"\']+)\.js([^\"\']{0,})[\"\']/gi, 'src="/$1.js?version=' + helper.version + '"');
+    builderIndexContents = builderIndexContents.replace (/src\=[\"\']\/src\/([^\"\']+)\.js([^\"\']{0,})[\"\']/gi, 'src="/src/$1.js?version=' + helper.version + '"');
     // 替换src="/src/
     builderIndexContents = builderIndexContents.replace (/src\=\"\/src\//g, 'src="/').replace (/href\=\"\/src\//g, 'href="/');
     
