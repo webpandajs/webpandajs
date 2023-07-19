@@ -9,7 +9,7 @@ module.exports = `/**
  * Copyright (c) 1992-` + fullYear + `, webpandajs.com. (MIT Licensed)
  * email <a@apilipala.com> 
  * qq <1102119280>
- * https://webpandajs.com/
+ * https://docs.webpandajs.com
  * https://github.com/webpandajs/webpandajs
  */
 `;
