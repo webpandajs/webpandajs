@@ -127,7 +127,20 @@ helper.console = {
 
 };
 
-const process = require('process');
+
+// 生成一个版本号
+var dates = new Date ();
+var times = [
+    dates.getFullYear (),// 年
+    dates.getMonth ()+1,// 月
+    dates.getDate (),// 日
+    dates.getHours (),// 时
+    dates.getMinutes (),// 分
+    dates.getSeconds (), //秒
+    dates.getMilliseconds () //毫秒
+];
+helper.version = times.join ('');
+
 
 /**
  * 获取根目录
@@ -138,10 +151,21 @@ var modulePaths = module.path.split (/\\|\//g);
 modulePaths.pop ();
 modulePaths.pop ();// 要从最后出栈两次才到根目录
 helper.__rootname = path.join.apply (path, modulePaths);
-helper.__distname = path.join.apply (path, [helper.__rootname, 'dist']);
 helper.__libraryname = path.join.apply (path, [helper.__rootname, 'library']);
 helper.__srcname = path.join.apply (path, [helper.__rootname, 'src']);
 helper.__scriptname = module.path;
+
+
+/**
+ * 创建dist目录名称
+ * @param {String|null} name 自定义名称
+ */
+helper.createDistname = function (name) {
+    if (typeof name !== 'string' || name === '') {
+        name = 'dist';
+    }
+    helper.__distname = path.join.apply (path, [helper.__rootname, name]);
+};
 
 
 /**
