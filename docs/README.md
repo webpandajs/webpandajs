@@ -3438,7 +3438,7 @@ this.eClickFnTest = function (e) {
 <div webpanda-element="nodevar=#node"></div>
 ```
 
-> 注意，如果节点已经创建了，重复渲染是不会执行的。也就是说只会在节点创建时执行。
+> 注意，如果节点已经创建了，重复渲染是不会执行的。也就是说只会在节点创建时执行。就算是重新执行渲染也不会执行了，除非将之前创建的节点删除掉。
 
 
 
@@ -3725,14 +3725,91 @@ before > if|else-if|else > template > for > is > 创建节点 element > print > 
 
 
 
+# 未来升级版本与作者想法
+
+
+## 剔除所有为了兼容IE的代码
+
+> 2022年6月15日21:00，微软停止支持Internet Explorer。浏览器的最新可用版本IE 11，转而只提供其当前的浏览器Microsoft Edge。 12月，在微软系统推送的更新计划文档中明确表示，微软将于2023年2月14日关闭IE浏览器，取而代之的是Edge浏览器。
+
+IE浏览器已经退出了历史舞台，删除其所有的兼容代码，可以减少代码量和提升加载性能。
 
 
 
+## 关于 addEventListener 新规范的思考
+
+参考文档：[EventTarget.addEventListener()](https://developer.mozilla.org/zh-CN/docs/Web/API/EventTarget/addEventListener)
+
+目标为止 addEventListener 共有三种规范写法：
+
+```javascript
+addEventListener (type, listener);
+addEventListener (type, listener, useCapture);
+// 2015年底，为了扩展新的选项，DOM 规范做了修订：
+addEventListener (type, listener, options);
+```
+
+> 目前 `webpanda.js v5` 版本只使用了前两个参数。第三个选项值并没有使用。
 
 
+options 如果是一个对象，则是一个指定有关 listener 属性的可选参数对象。可用的选项如下：
+
+```javascript
+{
+    // 一个布尔值，表示 listener 会在该类型的事件捕获阶段传播到该 EventTarget 时触发。false表示事件在冒泡阶段触发(默认)，true表示事件在捕获阶段触发
+    capture: false,
+    // 一个布尔值，表示 listener 在添加之后最多只调用一次。，true 表示事件在触发一次后移除，默认是false。
+    once: false,
+    // 一个布尔值，设置为 true 时，表示 listener 永远不会调用 preventDefault()。如果 listener 仍然调用了这个函数，客户端将会忽略它并抛出一个控制台警告。
+    passive: false,
+    // AbortSignal 对象，该 AbortSignal 的 abort() 方法被调用时，监听器会被移除。
+    signal: new AbortSignal(),
+}
+```
+
+> [AbortSignal](https://developer.mozilla.org/zh-CN/docs/Web/API/AbortSignal) 接口表示一个信号对象（signal object），它允许你通过 AbortController 对象与 DOM 请求（如 Fetch）进行通信并在需要时将其中止。
 
 
+对于新规范，在模板语法中原生事件设计如下（废弃的设计）：
 
+> 以 `option` 前缀表示设置选项参数。
 
+```html
+<!-- 解析成 addEventListener('click', listener, {once: true}) -->
+<div -onclick-optiononce="..."></div>
+<!-- 解析成 addEventListener('click', listener, {passive: true}) -->
+<div -onclick-optionpassive="..."></div>
+<!-- 解析成 addEventListener('click', listener, {passive: true, once: true}) -->
+<div -onclick-optionpassive-optiononce="..."></div>
+```
 
+后来我仔细思考了一下，如果模板语法的原生事件以这种设计方式增加了程序不可控问题，完全没有必要。依靠目前模板命令的组合，完全是可以使用另一种合适的写法方式实现的。
+
+那么如何使用原生事件的第三个参数呢？在模板语法中可以如下方式实现：
+
+```html
+<div -element="setEvent(#node)"></div>
+```
+
+```javascript
+webpanda.data ({
+    prototype: {
+        setEvent: function (node) {
+            node.addEventListener ('touchmove', this.preventTouchmove, {
+                passive: false,// passive 参数不能省略，用来兼容ios和android
+            });
+        },
+        // 禁止滚动
+        preventTouchmove: function (e) {
+            e.preventDefault();
+        }
+    },
+});
+```
+
+关于数据工程定义的原生事件，以及模板语法中使用的原生事件看法：
+
+在数据工程定义的原生事件，不考虑去兼容或者实现原生事件第三个对象参数的规范。因为整个数据工程的生命周期会有一个兼顾数据工程的事件规范，而原生事件的第三个对象参数，这个是特殊的操作。那么特殊的操作就应该设计成特殊的方式实现。
+
+那么如何使用原生事件的第三个参数呢？同样的道理，可以借助数据工程的 `onexecute` 、`onpagedestroy` 等等相关事件来控制原生事件的创建、删除。
 
