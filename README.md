@@ -1417,6 +1417,20 @@ webpanda.data ({
     }
 });
 
+
+webpanda.data ({
+    name: 't',
+    // 支持直接写要继承的数据工程名称
+    extend: 'test',
+});
+
+
+webpanda.data ({
+    name: 't',
+    // 支持函数
+    extend: ['test'],
+});
+
 //支持继承多个
 webpanda.data ({
     extend: [
@@ -1831,6 +1845,59 @@ webpanda.data ({
 ```
 
 
+## onuninstallpage
+
+当前数据工程在页面销毁时执行的事件。
+
+> 该事件属于数据工程的信号事件模块，表示其他数据工程无权拦截阻止。
+
+onuninstallpage 和 onpagedestroy 都会在页面销毁的时候执行。但是 onuninstallpage 事件对象的 `stopPropagation` 方法只会阻止自己以及自己继承的事件，而 onpagedestroy 事件对象的 `stopPropagation` 方法会阻止后面所有未执行的数据工程事件。
+
+数据工程需要析构一些属于自己的关键操作，并且不允许其他数据工程阻止执行，那么建议使用该事件。
+
+```javascript
+webpanda.data ({
+    onuninstallpage: function (e) {
+        // 当前数据工程对象
+        console.log (this);
+        // 事件名称
+        console.log (e.name);
+        // 当前页面执行时间
+        console.log (e.runtime);
+        // 是一个函数, 阻止事件冒泡, 后面未执行的事件回调函数不再执行
+        console.log (e.stopPropagation);
+    },
+
+});
+```
+
+## oninstallpage
+
+当前数据工程在页面最后执行的事件。
+
+> 该事件属于数据工程的信号事件模块，表示其他数据工程无权拦截阻止。
+
+oninstallpage 和 onpaged 都会在页面最后的时候执行。但是 oninstallpage 事件对象的 `stopPropagation` 方法只会阻止自己以及自己继承的事件，而 onpagedestroy 事件对象的 `stopPropagation` 方法会阻止后面所有未执行的数据工程事件。
+
+
+```javascript
+webpanda.data ({
+    oninstallpage: function (e) {
+        // 当前数据工程对象
+        console.log (this);
+        // 事件名称
+        console.log (e.name);
+        // 当前页面执行时间
+        console.log (e.runtime);
+        // 是一个函数, 阻止事件冒泡, 后面未执行的事件回调函数不再执行
+        console.log (e.stopPropagation);
+    },
+
+});
+```
+
+
+
 ## onready
 
 当前数据工程准备完成的事件。
@@ -1851,6 +1918,33 @@ webpanda.data ({
 
 });
 ```
+
+
+## ondestruct
+
+当前数据工程被删除时执行的事件。
+
+```javascript
+webpanda.data ({
+    ondestruct: function (e) {
+        // 当前数据工程对象
+        console.log (this);
+        // 事件名称
+        console.log (e.name);
+        // 当前页面执行时间
+        console.log (e.runtime);
+        // 是一个函数, 阻止事件冒泡, 后面未执行的事件回调函数不再执行
+        console.log (e.stopPropagation);
+    },
+
+});
+
+
+// 删除数据工程的时候，会执行上面的事件
+this.$.remove ();
+```
+
+
 
 
 ## onexecute
@@ -2561,7 +2655,7 @@ this.tag.Test = webpanda.data.get ('test');
 在非原生事件中，只对下面的非原生事件有控制效果：
 
 ```shell
-onpage|onpagenotfound|onpageprogress|onpaged|onpageurlchange|onpagedestroy|onurlchange
+onpage|onpagenotfound|onpageprogress|onpaged|onpageurlchange|onpagedestroy|onurlchange|onuninstallpage|oninstallpage
 ```
 
 除了上列的非原生事件、以及window、document原生事件之外，其他的非原生事件设置无效。
@@ -3811,5 +3905,55 @@ webpanda.data ({
 
 在数据工程定义的原生事件，不考虑去兼容或者实现原生事件第三个对象参数的规范。因为整个数据工程的生命周期会有一个兼顾数据工程的事件规范，而原生事件的第三个对象参数，这个是特殊的操作。那么特殊的操作就应该设计成特殊的方式实现。
 
-那么如何使用原生事件的第三个参数呢？同样的道理，可以借助数据工程的 `onexecute` 、`onpagedestroy` 等等相关事件来控制原生事件的创建、删除。
+那么如何使用原生事件的第三个参数呢？同样的道理，可以借助数据工程的 `onexecute` 、`ondestruct`、`onuninstallpage` 等等相关事件来控制原生事件的创建、删除。
+
+
+```javascript
+webpanda.data ({
+    name: 'EventDelegator',
+    ondestruct: function (e) {
+        this.stopEventDelegator ();
+    },
+    onuninstallpage: function (e) {
+        this.stopEventDelegator ();
+    },
+    construct: function () {
+        this.EventDelegatorList = new Array ();
+    },
+    prototype: {
+        // 创建一个事件委托
+        createEventDelegator: function (node, type, listener, options) {
+            var events = {
+                node: node,
+                type: type,
+                listener: listener,
+                options: options,
+            };
+            node.addEventListener (type, listener, options);
+            // ...
+            this.EventDelegatorList.push (events);
+            // ...
+            // 启用事件
+            this.$.event({
+                onuninstallpage: true,
+            });
+        },
+        // 停止事件委托
+        stopEventDelegator: function () {
+            // ...
+        },
+        // 暂停事件委托
+        pauseEventDelegator: function () {
+            // ...
+        },
+    }
+
+});
+
+webpanda.data ({
+    name: 'test',
+    extend: 'EventDelegator'
+});
+```
+
 
