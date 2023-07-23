@@ -3957,3 +3957,21 @@ webpanda.data ({
 ```
 
 
+## 渲染组件还需要优化
+
+
+之前为了兼容IE，使用的是 `Object.defineProperty()` 。新版本有可能考虑 `Proxy()` 来实现。
+
+
+## 新版本的代码格式规范考虑
+
+```javascript
+// 老规范
+webpanda.data (...);
+
+// 新规范：括号与变量无空格
+webpanda.data(...);
+```
+
+
+
