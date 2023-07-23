@@ -3957,3 +3957,38 @@ webpanda.data ({
 ```
 
 
+## 渲染组件还需要优化
+
+
+之前为了兼容IE，使用的是 `Object.defineProperty()` 。新版本有可能考虑 `Proxy()` 来实现。
+
+for循环的时候，直接克隆节点树。而不是重新编译子节点。克隆的时候，是深度克隆，子级以及子级的子级向下都要克隆一份。
+
+html解析器重构，入栈出栈都全部重写。
+
+关于 tag ，直接在渲染的时候可以设置（废弃onbefore、onafter）：
+
+```javascript
+compiler.render ({
+    tag: {
+        test: function () {
+
+        }
+    }
+});
+
+```
+
+
+## 新版本的代码格式规范考虑
+
+```javascript
+// 老规范
+webpanda.data (...);
+
+// 新规范：括号与变量无空格
+webpanda.data(...);
+```
+
+
+
